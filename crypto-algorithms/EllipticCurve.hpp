@@ -176,10 +176,8 @@ public:
 		auto a = *this;
 		auto b = other;
 		if (a == b){
-			T slope;
-			if (!a.get_slope(slope))
+			if (!a.get_slope(coeff1))
 				return Point();
-			coeff1 = slope;
 		}else{
 			if (a.x == b.x)
 				return Point();
@@ -189,9 +187,7 @@ public:
 			}
 			coeff1 = ((b.y - a.y) * extended_euclidean(b.x - a.x, p)).euclidean_modulo(p);
 		}
-		auto temp = coeff1 * a.x;
-		temp = a.y - temp;
-		auto coeff0 = temp.euclidean_modulo(p);
+		auto coeff0 = (a.y - coeff1 * a.x).euclidean_modulo(p);
 		//assert((coeff1 * a.x + coeff0).euclidean_modulo(p) == a.y);
 		//assert((coeff1 * b.x + coeff0).euclidean_modulo(p) == b.y);
 		auto x = ((coeff1 * coeff1) - a.x - b.x).euclidean_modulo(p);
