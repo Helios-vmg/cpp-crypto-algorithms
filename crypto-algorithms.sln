@@ -5,8 +5,6 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "crypto-algorithms", "crypto-algorithms\crypto-algorithms.vcxproj", "{88F03A62-D73D-4908-BBB3-E305F338453B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bignumtest", "bignumtest\bignumtest.csproj", "{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,18 +25,6 @@ Global
 		{88F03A62-D73D-4908-BBB3-E305F338453B}.Release|x64.Build.0 = Release|x64
 		{88F03A62-D73D-4908-BBB3-E305F338453B}.Release|x86.ActiveCfg = Release|Win32
 		{88F03A62-D73D-4908-BBB3-E305F338453B}.Release|x86.Build.0 = Release|Win32
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Debug|x64.Build.0 = Debug|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Debug|x86.Build.0 = Debug|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Release|x64.ActiveCfg = Release|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Release|x64.Build.0 = Release|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Release|x86.ActiveCfg = Release|Any CPU
-		{8FE6DF6F-2199-4615-A0EF-D669EF44AC83}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

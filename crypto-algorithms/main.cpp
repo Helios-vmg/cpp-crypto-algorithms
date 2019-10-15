@@ -350,25 +350,8 @@ void test_secp256k1(){
 	std::cout << "Secp256k1 implementation passed the test!\n";
 }
 
-void test_secp256k1_2(){
-	using namespace ECDSA::Secp256k1;
-
-	auto digest = block_from_string("4b688df40bcedbe641ddb16ff0a1842d9c67ea1c3bf63f3e0471baa664531d1a");
-	std::reverse(digest.begin(), digest.end());
-	PrivateKey private_key(BigNum<1024>::from_hex_string("ebb2c082fd7727890a28ac82f6bdf97bad8de9f5d7c9028692de1a255cad3e0f"));
-	Nonce nonce(BigNum<1024>::from_hex_string("49a0d7b786ec9cde0d0721d72804befd06571c974b191efb42ecf322ba9ddd9a"));
-	Signature expected_sig(BigNum<256>::from_hex_string("241097efbf8b63bf145c8961dbdf10c310efbb3b2676bbc0f8b08505c9e2f795"), BigNum<256>::from_hex_string("21006b7838609339e8b415a7f9acb1b661828131aef1ecbc7955dfb01f3ca0e"));
-
-	for (int i = 0; i < 100; i++){
-		auto signature = static_pointer_cast<Signature>(private_key.sign_digest(digest.data(), digest.size(), nonce));
-		if (!signature || *signature != expected_sig)
-			throw std::runtime_error("Secp256k1 failed test");
-	}
-}
-
 int main(){
 	try{
-		//test_secp256k1_2();
 		test_md5();
 		test_sha256();
 		test_aes_sanity();
