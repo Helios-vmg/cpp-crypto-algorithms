@@ -817,8 +817,7 @@ SignedBigNum<N, T> extended_euclidean(SignedBigNum<N, T> a, const SignedBigNum<N
 
 		auto temp = x0;
 		x0 = x1;
-		auto temp2 = q * x0;
-		x1 = temp - temp2;
+		x1 = temp - q * x0;
 	}
 
 	return x0.euclidean_modulo(b);
