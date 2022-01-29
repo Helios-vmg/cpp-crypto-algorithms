@@ -121,4 +121,4 @@ struct hash<Hashes::Digests::SHA256>{
 	}
 };
 
-}
+} //std

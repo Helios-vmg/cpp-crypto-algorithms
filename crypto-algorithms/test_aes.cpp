@@ -13,8 +13,8 @@ void test_aes_sized(){
 	};
 
 	for (auto passphrase : passphrases){
-		auto digest = Md5::compute(passphrase, strlen(passphrase));
-		AES::AesKey<N> key(digest.data);
+		auto digest = Hashes::Algorithms::MD5::compute(passphrase, strlen(passphrase)).to_array();
+		AES::AesKey<N> key(digest.data());
 		AES::Aes<N> aes(key);
 		const char plaintext[] = "ABCDEFGHIJKLMNOP";
 		char ciphertext[AES::block_size];

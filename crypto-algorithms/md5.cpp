@@ -1,29 +1,27 @@
 #include "md5.hpp"
 
-namespace md5_detail{
-
-inline std::uint32_t f1(std::uint32_t x, std::uint32_t y, std::uint32_t z){
+static std::uint32_t f1(std::uint32_t x, std::uint32_t y, std::uint32_t z){
 	return (x & y) | (~x & z);
 }
 
-inline std::uint32_t f2(std::uint32_t x, std::uint32_t y, std::uint32_t z){
+static std::uint32_t f2(std::uint32_t x, std::uint32_t y, std::uint32_t z){
 	return (x & z) | (y & ~z);
 }
 
-inline std::uint32_t f3(std::uint32_t x, std::uint32_t y, std::uint32_t z){
+static std::uint32_t f3(std::uint32_t x, std::uint32_t y, std::uint32_t z){
 	return x ^ y ^ z;
 }
 
-inline std::uint32_t f4(std::uint32_t x, std::uint32_t y, std::uint32_t z){
+static std::uint32_t f4(std::uint32_t x, std::uint32_t y, std::uint32_t z){
 	return (y ^ (x | ~z));
 }
 
-inline std::uint32_t rotl(std::uint32_t a, std::uint32_t b){
+static std::uint32_t rotl(std::uint32_t a, std::uint32_t b){
 	return (a << b) | (a >> (32 - b));
 }
 
 template <std::uint32_t F(std::uint32_t, std::uint32_t, std::uint32_t)>
-inline void transform(std::uint32_t &a, std::uint32_t b, std::uint32_t c, std::uint32_t d, std::uint32_t m, std::uint32_t s, std::uint32_t t){
+void transform(std::uint32_t &a, std::uint32_t b, std::uint32_t c, std::uint32_t d, std::uint32_t m, std::uint32_t s, std::uint32_t t){
 	a += F(b, c, d) + m + t;
 	a = b + rotl(a, s);
 }
@@ -39,7 +37,7 @@ struct MetaParameters{
 	const Parameters *parameters;
 };
 
-extern const Parameters parameters[] = {
+static const Parameters parameters[] = {
 	{  0,  7, 0xd76aa478 },
 	{  1, 12, 0xe8c7b756 },
 	{  2, 17, 0x242070db },
@@ -109,16 +107,38 @@ extern const Parameters parameters[] = {
 	{  9, 21, 0xeb86d391 },
 };
 
-extern const MetaParameters metaparameters[4] = {
+static const MetaParameters metaparameters[4] = {
 	{ transform<f1>, parameters + 16 * 0 },
 	{ transform<f2>, parameters + 16 * 1 },
 	{ transform<f3>, parameters + 16 * 2 },
 	{ transform<f4>, parameters + 16 * 3 },
 };
 
+namespace Hashes{
+namespace Digests{
+
+int MD5::cmp(const MD5 &other) const{
+	return memcmp(this->digest.data(), other.digest.data(), this->digest.size());
 }
 
-void Md5::transform() noexcept{
+MD5::operator std::string() const{
+	return detail::to_string(*this);
+}
+
+void MD5::write_to_char_array(char (&array)[string_size]) const{
+	detail::write_to_char_array<MD5>(array, this->digest);
+}
+
+void MD5::write_to_char_vector(std::vector<char> &s) const{
+	detail::write_to_char_vector(s, *this);
+}
+
+} //Digests
+
+namespace Algorithms{
+
+
+void MD5::transform() noexcept{
 	std::uint32_t m[16];
 
 	// MD5 specifies big endian byte order, but this implementation assumes a little
@@ -131,7 +151,7 @@ void Md5::transform() noexcept{
 	for (int i = 4; i--;)
 		temp[i] = this->state[i];
 
-	for (auto &mp : md5_detail::metaparameters){
+	for (auto &mp : metaparameters){
 		int i = 0;
 		for (size_t j = 0; j < 16; j++){
 			auto &p = mp.parameters[j];
@@ -150,7 +170,7 @@ void Md5::transform() noexcept{
 		this->state[i] += temp[i];
 }
 
-void Md5::reset(){
+void MD5::reset() noexcept{
 	this->datalen = 0;
 	this->bitlen = 0;
 	this->state[0] = 0x67452301;
@@ -159,7 +179,7 @@ void Md5::reset(){
 	this->state[3] = 0x10325476;
 }
 
-void Md5::update(const void *void_buffer, size_t length) noexcept{
+void MD5::update(const void *void_buffer, size_t length) noexcept{
 	auto buffer = (const std::uint8_t *)void_buffer;
 	for (size_t i = 0; i < length; i++) {
 		this->data[this->datalen++] = buffer[i];
@@ -171,7 +191,7 @@ void Md5::update(const void *void_buffer, size_t length) noexcept{
 	}
 }
 
-Md5Digest Md5::get_digest() noexcept{
+Digests::MD5 MD5::get_digest() noexcept{
 	size_t i = this->datalen;
 
 	// Pad whatever data is left in the buffer.
@@ -193,16 +213,20 @@ Md5Digest Md5::get_digest() noexcept{
 		this->data[56 + j] = (std::uint8_t)(this->bitlen >> (8 * j));
 	this->transform();
 
-	Md5Digest ret;
+	Digests::MD5::digest_t ret;
 
 	// Since this implementation uses little endian byte ordering and MD uses big endian,
 	// reverse all the bytes when copying the final state to the output hash.
 	for (i = 0; i < 4; ++i){
-		ret.data[i] = (this->state[0] >> (i * 8)) & 0xFF;
-		ret.data[i + 4] = (this->state[1] >> (i * 8)) & 0xFF;
-		ret.data[i + 8] = (this->state[2] >> (i * 8)) & 0xFF;
-		ret.data[i + 12] = (this->state[3] >> (i * 8)) & 0xFF;
+		ret[i] = (this->state[0] >> (i * 8)) & 0xFF;
+		ret[i + 4] = (this->state[1] >> (i * 8)) & 0xFF;
+		ret[i + 8] = (this->state[2] >> (i * 8)) & 0xFF;
+		ret[i + 12] = (this->state[3] >> (i * 8)) & 0xFF;
 	}
 
 	return ret;
 }
+
+} //Algorithms
+
+} //Hashes
