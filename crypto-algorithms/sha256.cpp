@@ -1,61 +1,35 @@
 #include "sha256.hpp"
 #include <cstring>
 
-void Sha256::reset(){
-	this->datalen = 0;
-	this->bitlen = 0;
-	this->state[0] = 0x6a09e667;
-	this->state[1] = 0xbb67ae85;
-	this->state[2] = 0x3c6ef372;
-	this->state[3] = 0xa54ff53a;
-	this->state[4] = 0x510e527f;
-	this->state[5] = 0x9b05688c;
-	this->state[6] = 0x1f83d9ab;
-	this->state[7] = 0x5be0cd19;
-}
-
-void Sha256::update(const void *void_buffer, size_t length){
-	auto buffer = (const std::uint8_t *)void_buffer;
-	for (size_t i = 0; i < length; ++i) {
-		this->data[this->datalen] = buffer[i];
-		this->datalen++;
-		if (this->datalen == 64) {
-			this->transform();
-			this->bitlen += 512;
-			this->datalen = 0;
-		}
-	}
-}
-
-std::uint32_t rotate_left(std::uint32_t a, std::uint32_t b){
+static std::uint32_t rotate_left(std::uint32_t a, std::uint32_t b){
 	return (a << b) | (a >> (32 - b));
 }
 
-std::uint32_t rotate_right(std::uint32_t a, std::uint32_t b){
+static std::uint32_t rotate_right(std::uint32_t a, std::uint32_t b){
 	return (a >> b) | (a << (32 - b));
 }
 
-std::uint32_t sig0(std::uint32_t x){
+static std::uint32_t sig0(std::uint32_t x){
 	return rotate_right(x, 7) ^ rotate_right(x, 18) ^ (x >> 3);
 }
 
-std::uint32_t sig1(std::uint32_t x){
+static std::uint32_t sig1(std::uint32_t x){
 	return rotate_right(x, 17) ^ rotate_right(x, 19) ^ (x >> 10);
 }
 
-std::uint32_t ch(std::uint32_t x, std::uint32_t y, std::uint32_t z){
+static std::uint32_t ch(std::uint32_t x, std::uint32_t y, std::uint32_t z){
 	return (x & y) ^ (~x & z);
 }
 
-std::uint32_t maj(std::uint32_t x, std::uint32_t y, std::uint32_t z){
+static std::uint32_t maj(std::uint32_t x, std::uint32_t y, std::uint32_t z){
 	return (x & y) ^ (x & z) ^ (y & z);
 }
 
-std::uint32_t ep0(std::uint32_t x){
+static std::uint32_t ep0(std::uint32_t x){
 	return rotate_right(x, 2) ^ rotate_right(x, 13) ^ rotate_right(x, 22);
 }
 
-std::uint32_t ep1(std::uint32_t x){
+static std::uint32_t ep1(std::uint32_t x){
 	return rotate_right(x, 6) ^ rotate_right(x, 11) ^ rotate_right(x, 25);
 }
 
@@ -70,7 +44,117 @@ static const std::uint32_t k[64] = {
 	0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 };
 
-void Sha256::transform(){
+namespace Hashes{
+
+namespace Digests{
+
+SHA256::SHA256(const std::string &digest): SHA256(digest.c_str(), digest.size()){}
+
+SHA256::SHA256(const char *digest, size_t size){
+	if (size != this->size * 2)
+		throw InvalidHexException();
+	int j = 0;
+	for (int i = this->size; i--;){
+		std::uint8_t b = detail::hex2val(digest[j++]);
+		b <<= 4;
+		b |= detail::hex2val(digest[j++]);
+		this->digest[i] = b;
+	}
+}
+
+int SHA256::cmp(const SHA256 &other) const{
+	return memcmp(this->digest.data(), other.digest.data(), this->digest.size());
+}
+
+SHA256::operator std::string() const{
+	return detail::to_string(*this);
+}
+
+void SHA256::write_to_char_array(char (&array)[string_size]) const{
+	detail::write_to_char_array<SHA256>(array, this->digest);
+}
+
+void SHA256::write_to_char_vector(std::vector<char> &s) const{
+	detail::write_to_char_vector(s, *this);
+}
+
+}
+
+namespace Algorithms{
+
+void SHA256::reset() noexcept{
+	this->datalen = 0;
+	this->bitlen = 0;
+	this->state[0] = 0x6a09e667;
+	this->state[1] = 0xbb67ae85;
+	this->state[2] = 0x3c6ef372;
+	this->state[3] = 0xa54ff53a;
+	this->state[4] = 0x510e527f;
+	this->state[5] = 0x9b05688c;
+	this->state[6] = 0x1f83d9ab;
+	this->state[7] = 0x5be0cd19;
+}
+
+void SHA256::update(const void *void_buffer, size_t length) noexcept{
+	auto buffer = (const std::uint8_t *)void_buffer;
+	for (size_t i = 0; i < length; ++i) {
+		this->data[this->datalen] = buffer[i];
+		this->datalen++;
+		if (this->datalen == 64) {
+			this->transform();
+			this->bitlen += 512;
+			this->datalen = 0;
+		}
+	}
+}
+
+Digests::SHA256 SHA256::get_digest() noexcept{
+	auto i = this->datalen;
+
+	// Pad whatever data is left in the buffer.
+	if (this->datalen < 56){
+		this->data[i++] = 0x80;
+		while (i < 56)
+			this->data[i++] = 0x00;
+	}else{
+		this->data[i++] = 0x80;
+		while (i < 64)
+			this->data[i++] = 0x00;
+		this->transform();
+		memset(this->data, 0, 56);
+	}
+
+	// Append to the padding the total message's length in bits and transform.
+	this->bitlen += this->datalen * 8;
+	this->data[63] = (std::uint8_t)this->bitlen;
+	this->data[62] = (std::uint8_t)(this->bitlen >> 8);
+	this->data[61] = (std::uint8_t)(this->bitlen >> 16);
+	this->data[60] = (std::uint8_t)(this->bitlen >> 24);
+	this->data[59] = (std::uint8_t)(this->bitlen >> 32);
+	this->data[58] = (std::uint8_t)(this->bitlen >> 40);
+	this->data[57] = (std::uint8_t)(this->bitlen >> 48);
+	this->data[56] = (std::uint8_t)(this->bitlen >> 56);
+	this->transform();
+
+	Digests::SHA256::digest_t ret;
+
+	// Since this implementation uses little endian byte ordering and SHA uses big endian,
+	// reverse all the bytes when copying the final state to the output hash.
+	for (i = 0; i < 4; ++i) {
+		ret[i +  0] = (this->state[0] >> (24 - i * 8)) & 0xFF;
+		ret[i +  4] = (this->state[1] >> (24 - i * 8)) & 0xFF;
+		ret[i +  8] = (this->state[2] >> (24 - i * 8)) & 0xFF;
+		ret[i + 12] = (this->state[3] >> (24 - i * 8)) & 0xFF;
+		ret[i + 16] = (this->state[4] >> (24 - i * 8)) & 0xFF;
+		ret[i + 20] = (this->state[5] >> (24 - i * 8)) & 0xFF;
+		ret[i + 24] = (this->state[6] >> (24 - i * 8)) & 0xFF;
+		ret[i + 28] = (this->state[7] >> (24 - i * 8)) & 0xFF;
+	}
+
+	return ret;
+}
+
+void SHA256::transform() noexcept{
 	std::uint32_t t1, t2, m[64];
 
 	{
@@ -113,49 +197,6 @@ void Sha256::transform(){
 	this->state[7] += h;
 }
 
-Sha256Digest Sha256::get_digest(){
-	auto i = this->datalen;
+} //Algorithms
 
-	// Pad whatever data is left in the buffer.
-	if (this->datalen < 56){
-		this->data[i++] = 0x80;
-		while (i < 56)
-			this->data[i++] = 0x00;
-	}else{
-		this->data[i++] = 0x80;
-		while (i < 64)
-			this->data[i++] = 0x00;
-		this->transform();
-		memset(this->data, 0, 56);
-	}
-
-	// Append to the padding the total message's length in bits and transform.
-	this->bitlen += this->datalen * 8;
-	this->data[63] = (std::uint8_t)this->bitlen;
-	this->data[62] = (std::uint8_t)(this->bitlen >> 8);
-	this->data[61] = (std::uint8_t)(this->bitlen >> 16);
-	this->data[60] = (std::uint8_t)(this->bitlen >> 24);
-	this->data[59] = (std::uint8_t)(this->bitlen >> 32);
-	this->data[58] = (std::uint8_t)(this->bitlen >> 40);
-	this->data[57] = (std::uint8_t)(this->bitlen >> 48);
-	this->data[56] = (std::uint8_t)(this->bitlen >> 56);
-	this->transform();
-
-	Sha256Digest ret;
-	auto hash = ret.data;
-
-	// Since this implementation uses little endian byte ordering and SHA uses big endian,
-	// reverse all the bytes when copying the final state to the output hash.
-	for (i = 0; i < 4; ++i) {
-		hash[i +  0] = (this->state[0] >> (24 - i * 8)) & 0xFF;
-		hash[i +  4] = (this->state[1] >> (24 - i * 8)) & 0xFF;
-		hash[i +  8] = (this->state[2] >> (24 - i * 8)) & 0xFF;
-		hash[i + 12] = (this->state[3] >> (24 - i * 8)) & 0xFF;
-		hash[i + 16] = (this->state[4] >> (24 - i * 8)) & 0xFF;
-		hash[i + 20] = (this->state[5] >> (24 - i * 8)) & 0xFF;
-		hash[i + 24] = (this->state[6] >> (24 - i * 8)) & 0xFF;
-		hash[i + 28] = (this->state[7] >> (24 - i * 8)) & 0xFF;
-	}
-
-	return ret;
-}
+} //Hashes

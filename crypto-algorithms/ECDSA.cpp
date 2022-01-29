@@ -18,7 +18,8 @@ std::unique_ptr<ECDSA::PublicKey> PrivateKey::get_public_key() const{
 }
 
 std::unique_ptr<ECDSA::Signature> PrivateKey::sign_message(const void *message, size_t length, ECDSA::Nonce &nonce){
-	return this->sign_digest(Sha256::compute(message, length).data, dynamic_cast<Nonce &>(nonce));
+	auto digest = Hashes::Algorithms::SHA256::compute(message, length).to_array();
+	return this->sign_digest(digest.data(), dynamic_cast<Nonce &>(nonce));
 }
 
 std::unique_ptr<ECDSA::Signature> PrivateKey::sign_digest(const void *digest, size_t length, ECDSA::Nonce &nonce){
@@ -41,7 +42,8 @@ std::unique_ptr<ECDSA::Signature> PrivateKey::sign_digest(const void *digest, No
 }
 
 MessageVerificationResult Signature::verify_message(const void *message, size_t length, ECDSA::PublicKey &pk) const{
-	return this->verify_digest(Sha256::compute(message, length).data, dynamic_cast<PublicKey &>(pk));
+	auto digest = Hashes::Algorithms::SHA256::compute(message, length).to_array();
+	return this->verify_digest(digest.data(), dynamic_cast<PublicKey &>(pk));
 }
 
 MessageVerificationResult Signature::verify_digest(const void *digest, size_t length, ECDSA::PublicKey &pk) const{

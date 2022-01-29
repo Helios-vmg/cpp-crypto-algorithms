@@ -33,8 +33,8 @@ void test_md5(const char *data, const char *sum){
 }
 
 void test_256(const char *data, const char *sum){
-	auto digest = Sha256::compute(data, strlen(data));
-	auto string = to_string(digest);
+	auto digest = Hashes::Algorithms::SHA256::compute(data, strlen(data));
+	auto string = (std::string)digest;
 	if (strcmp(sum, string.data())){
 		std::stringstream stream;
 		stream << "Failed test: sha256(" << data << ") != " << sum;
@@ -346,7 +346,8 @@ void test_secp256k1(const char *digest_string, const char *private_key_string, c
 }
 
 void test_secp256k1(const char *original_message, const char *digest_string, const char *private_key_string, const char *public_key_string, const char *nonce_string, const char *r_string, const char *s_string){
-	if (strcmp(to_string(Sha256::compute(original_message, strlen(original_message))).data(), digest_string))
+	std::string string = Hashes::Algorithms::SHA256::compute(original_message, strlen(original_message));
+	if (string != digest_string)
 		throw std::runtime_error("Secp256k1 failed hashing test");
 	test_secp256k1(digest_string, private_key_string, public_key_string, nonce_string, r_string, s_string);
 }
