@@ -851,7 +851,7 @@ bool tonelli_shanks(SignedBigNum<Bits, T> &first_solution, SignedBigNum<Bits, T>
 	}
 
 	N z(2);
-	for (auto n2 = n1 >> 1; z.mod_pow(n2, n) != n1)
+	for (auto n2 = n1 >> 1; z.mod_pow(n2, n) != n1;)
 		z++;
 
 	auto c = z.mod_pow(q, n);
