@@ -149,6 +149,12 @@
     <ClInclude Include="hash.hpp" />
     <ClInclude Include="md5.hpp" />
     <ClInclude Include="sha256.hpp" />
+    <ClInclude Include="test_aes.hpp" />
+    <ClInclude Include="test_bignum.hpp" />
+    <ClInclude Include="test_md5.hpp" />
+    <ClInclude Include="test_secp256k1.hpp" />
+    <ClInclude Include="test_sha256.hpp" />
+    <ClInclude Include="test_utility.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="aes.cpp" />
@@ -162,6 +168,12 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="md5.cpp" />
     <ClCompile Include="sha256.cpp" />
+    <ClCompile Include="test_aes.cpp" />
+    <ClCompile Include="test_bignum.cpp" />
+    <ClCompile Include="test_md5.cpp" />
+    <ClCompile Include="test_secp256k1.cpp" />
+    <ClCompile Include="test_sha256.cpp" />
+    <ClCompile Include="test_utility.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

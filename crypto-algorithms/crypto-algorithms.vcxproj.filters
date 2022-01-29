@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="tests">
+      <UniqueIdentifier>{c6900a97-f1ef-44b1-ac35-45956a1024d4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="md5.hpp">
@@ -36,6 +39,24 @@
     <ClInclude Include="hash.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="test_utility.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="test_secp256k1.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="test_md5.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="test_sha256.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="test_aes.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="test_bignum.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -55,6 +76,24 @@
     </ClCompile>
     <ClCompile Include="hash.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_utility.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="test_secp256k1.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="test_md5.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="test_sha256.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="test_aes.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="test_bignum.cpp">
+      <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
