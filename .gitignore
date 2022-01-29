@@ -12,3 +12,4 @@
 *.tlog
 *.user
 *.exe.recipe
+*.vcxproj.FileListAbsolute.txt
