@@ -84,6 +84,12 @@
     <ClInclude Include="test_stream.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="rng.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test_rng.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -136,6 +142,9 @@
     </ClCompile>
     <ClCompile Include="test_stream.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_rng.cpp">
+      <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

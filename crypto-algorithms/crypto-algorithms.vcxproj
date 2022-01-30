@@ -155,6 +155,7 @@
     <ClInclude Include="hex.hpp" />
     <ClInclude Include="md5.hpp" />
     <ClInclude Include="ringbuffer.hpp" />
+    <ClInclude Include="rng.hpp" />
     <ClInclude Include="sha256.hpp" />
     <ClInclude Include="source_sink.hpp" />
     <ClInclude Include="stream.hpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="test_bignum.hpp" />
     <ClInclude Include="test_block.hpp" />
     <ClInclude Include="test_md5.hpp" />
+    <ClInclude Include="test_rng.hpp" />
     <ClInclude Include="test_secp256k1.hpp" />
     <ClInclude Include="test_sha256.hpp" />
     <ClInclude Include="test_stream.hpp" />
@@ -186,6 +188,7 @@
     <ClCompile Include="test_aes.cpp" />
     <ClCompile Include="test_bignum.cpp" />
     <ClCompile Include="test_md5.cpp" />
+    <ClCompile Include="test_rng.cpp" />
     <ClCompile Include="test_secp256k1.cpp" />
     <ClCompile Include="test_sha256.cpp" />
     <ClCompile Include="test_stream.cpp" />

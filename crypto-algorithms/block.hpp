@@ -24,6 +24,7 @@ public:
 		Key(){
 			memset(this->key.data(), 0, size);
 		}
+		Key(const std::array<std::uint8_t, size> &src): key(src){}
 		Key(const void *src){
 			memcpy(this->key.data(), src, size);
 		}
