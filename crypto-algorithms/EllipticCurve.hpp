@@ -27,7 +27,7 @@ public:
 		return l == r;
 	}
 	T evaluate_x(const T &x) const{
-		return (((x * x + a) * x + b) % p).cast<Bits>();
+		return (((x * x + a) * x + b) % p).template cast<Bits>();
 	}
 	bool get_slope(T &dst, const T &x, const T &y) const{
 		if (!this->is_solution(x, y))
@@ -35,7 +35,7 @@ public:
 		if (!y)
 			return false;
 		auto dividend = (x.mod_pow(2, p) * 3 + a) % p;
-		auto divisor = extended_euclidean(y.cast<Bits / 3>() * 2, p.cast<Bits / 3>()).cast<Bits>();
+		auto divisor = extended_euclidean(y.template cast<Bits / 3>() * 2, p.template cast<Bits / 3>()).template cast<Bits>();
 
 		dst = ((dividend * divisor) % p);
 
@@ -48,7 +48,7 @@ public:
 	}
 	template <size_t N>
 	Parameters<N> cast() const{
-		return Parameters<N>(this->p.cast<N>(), this->a.cast<N>(), this->b.cast<N>());
+		return Parameters<N>(this->p.template cast<N>(), this->a.template cast<N>(), this->b.template cast<N>());
 	}
 };
 
@@ -215,7 +215,7 @@ public:
 		for (size_t i = 0; i < m; i++){
 			auto bit = (bytes[i / 8] >> (i % 8)) & 1;
 			if (bit)
-				ret += a.cast<Bits>();
+				ret += a.template cast<Bits>();
 			a += a;
 		}
 		return ret;
@@ -250,7 +250,7 @@ public:
 	Point<N> cast() const{
 		if (this->infinite)
 			return Point<N>();
-		return Point<N>(this->x.cast<N>(), this->y.cast<N>(), this->parameters.cast<N>());
+		return Point<N>(this->x.template cast<N>(), this->y.template cast<N>(), this->parameters.template cast<N>());
 	}
 };
 

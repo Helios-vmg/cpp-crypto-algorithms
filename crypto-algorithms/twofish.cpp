@@ -127,44 +127,6 @@ template <size_t N>
 using K = typename symmetric::Twofish<N>::KeySchedule;
 
 template <size_t Size>
-void do_round(int r, x_t<Size> &x, const K<Size> &key){
-	static const auto rs = symmetric::Twofish<Size>::round_subkeys;
-
-	auto &sbk = key.sbox_keys;
-	auto sk = key.sub_keys + rs + 2 * r;
-	
-	auto t0	 = f32<Size>(    x[0]    , sbk);
-	auto t1	 = f32<Size>(rotate_left(x[1], 8), sbk);
-
-	x[3] = rotate_left(x[3],1);
-
-	//PHT, round keys
-	x[2] ^= t0 +     t1 + sk[0];
-	x[3] ^= t0 + 2 * t1 + sk[1];
-
-	x[2] = rotate_right(x[2], 1);
-}
-
-template <size_t Size>
-void undo_round(int r, x_t<Size> &x, const K<Size> &key){
-	static const auto rs = symmetric::Twofish<Size>::round_subkeys;
-
-	auto &sbk = key.sbox_keys;
-	auto sk = key.sub_keys + rs + 2 * r;
-	
-	auto t0	 = f32<Size>(    x[0]    , sbk);
-	auto t1	 = f32<Size>(rotate_left(x[1], 8), sbk);
-
-	x[2] = rotate_left(x[2], 1);
-	
-	//PHT, round keys
-	x[2] ^= t0 +     t1 + sk[0];
-	x[3] ^= t0 + 2 * t1 + sk[1];
-	
-	x[3] = rotate_right(x[3], 1);
-}
-
-template <size_t Size>
 x_t<Size> load_block(const std::uint8_t *block, size_t offset, const K<Size> &key){
 	x_t<Size> ret;
 	for (size_t i = 0; i < x_size<Size>::value; i++){
@@ -338,6 +300,44 @@ std::uint32_t rotate_left(std::uint32_t x, std::uint32_t n){
 
 std::uint32_t rotate_right(std::uint32_t x, std::uint32_t n){
 	return rotate_left(x, 32 - (n & 31));
+}
+
+template <size_t Size>
+void do_round(int r, x_t<Size> &x, const K<Size> &key){
+	static const auto rs = symmetric::Twofish<Size>::round_subkeys;
+
+	auto &sbk = key.sbox_keys;
+	auto sk = key.sub_keys + rs + 2 * r;
+	
+	auto t0	 = f32<Size>(    x[0]    , sbk);
+	auto t1	 = f32<Size>(rotate_left(x[1], 8), sbk);
+
+	x[3] = rotate_left(x[3],1);
+
+	//PHT, round keys
+	x[2] ^= t0 +     t1 + sk[0];
+	x[3] ^= t0 + 2 * t1 + sk[1];
+
+	x[2] = rotate_right(x[2], 1);
+}
+
+template <size_t Size>
+void undo_round(int r, x_t<Size> &x, const K<Size> &key){
+	static const auto rs = symmetric::Twofish<Size>::round_subkeys;
+
+	auto &sbk = key.sbox_keys;
+	auto sk = key.sub_keys + rs + 2 * r;
+	
+	auto t0	 = f32<Size>(    x[0]    , sbk);
+	auto t1	 = f32<Size>(rotate_left(x[1], 8), sbk);
+
+	x[2] = rotate_left(x[2], 1);
+	
+	//PHT, round keys
+	x[2] ^= t0 +     t1 + sk[0];
+	x[3] ^= t0 + 2 * t1 + sk[1];
+	
+	x[3] = rotate_right(x[3], 1);
 }
 
 }

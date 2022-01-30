@@ -5,6 +5,8 @@
 #include <vector>
 #include <type_traits>
 #include <random>
+#include <array>
+#include <cstring>
 
 namespace csprng{
 

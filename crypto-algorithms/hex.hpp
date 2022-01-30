@@ -4,6 +4,7 @@
 #include <exception>
 #include <stdexcept>
 #include <array>
+#include <cstring>
 
 namespace utility{
 

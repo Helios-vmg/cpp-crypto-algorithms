@@ -85,7 +85,7 @@ CipherStream<Cipher>::~CipherStream(){}
 template <typename Cipher>
 class CtrCipherStream : public CipherStream<Cipher>{
 	std::uint64_t state = 0;
-	block_t process(const block_t &input) override{
+	typename Cipher::block_t process(const typename Cipher::block_t &input) override{
 		auto ret = this->iv;
 		auto s = this->state++;
 		for (size_t i = 0; i < Cipher::block_size && s; i++){
@@ -98,7 +98,7 @@ class CtrCipherStream : public CipherStream<Cipher>{
 		return ret;
 	}
 public:
-	CtrCipherStream(const Cipher &c, const block_t &iv, bool encrypt): CipherStream(c, iv, encrypt){}
+	CtrCipherStream(const Cipher &c, const typename Cipher::block_t &iv, bool encrypt): CipherStream<Cipher>(c, iv, encrypt){}
 	CtrCipherStream(const CtrCipherStream &) = delete;
 	CtrCipherStream &operator=(const CtrCipherStream &) = delete;
 	CtrCipherStream(CtrCipherStream &&other) = delete;
@@ -107,7 +107,7 @@ public:
 		this->process_all();
 		if (!this->input_buffer.get_length())
 			return;
-		block_t ret;
+		typename Cipher::block_t ret;
 		auto read = this->input_buffer.read(ret.data(), ret.size());
 		ret = this->process(ret);
 		this->output_buffer.write(ret.data(), read);

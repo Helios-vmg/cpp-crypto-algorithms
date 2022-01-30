@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <type_traits>
+#include <cstdint>
 
 template <size_t MinimumBits, typename number_t = uintptr_t>
 class SignedBigNum;
@@ -123,7 +124,7 @@ public:
 		this->data[0] = (uintptr_t)(typename std::make_unsigned<x>::type)value; \
 		std::fill(this->data + 1, this->data + numbers, 0); \
 	}
-	DEFINE_BIGNUM_CONSTRUCTOR(uintptr_t)
+	//DEFINE_BIGNUM_CONSTRUCTOR(uintptr_t)
 	DEFINE_BIGNUM_CONSTRUCTOR(int)
 	DEFINE_BIGNUM_CONSTRUCTOR(unsigned)
 	DEFINE_BIGNUM_CONSTRUCTOR(long)
@@ -562,7 +563,7 @@ public:
 	SignedBigNum &operator=(SignedBigNum &&other) = default;
 	template <size_t N>
 	SignedBigNum<N, number_t> cast() const{
-		auto ret = SignedBigNum<N>(this->data.cast<N>());
+		SignedBigNum<N, number_t> ret = this->data.template cast<N>();
 		ret.sign = this->sign;
 		return ret;
 	}
@@ -880,7 +881,7 @@ bool tonelli_shanks(SignedBigNum<Bits, T> &first_solution, SignedBigNum<Bits, T>
 	return true;
 }
 
-template <size_t MinimumBits, typename number_t = uintptr_t>
+template <size_t MinimumBits, typename number_t>
 BigNum<MinimumBits, number_t>::BigNum(const char *string): BigNum(){
 	for (; *string; string++){
 		number_t digit = 0;
@@ -895,12 +896,12 @@ BigNum<MinimumBits, number_t>::BigNum(const char *string): BigNum(){
 	}
 }
 
-template <size_t MinimumBits, typename number_t = uintptr_t>
+template <size_t MinimumBits, typename number_t>
 SignedBigNum<MinimumBits, number_t> BigNum<MinimumBits, number_t>::make_signed() const{
 	return SignedBigNum<MinimumBits, number_t>(*this);
 }
 
-template <size_t MinimumBits, typename number_t = uintptr_t>
+template <size_t MinimumBits, typename number_t>
 SignedBigNum<MinimumBits, number_t> BigNum<MinimumBits, number_t>::operator-() const{
 	return -this->make_signed();
 }

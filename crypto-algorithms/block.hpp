@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <array>
 #include <stdexcept>
+#include <cstring>
 
 namespace symmetric{
 
