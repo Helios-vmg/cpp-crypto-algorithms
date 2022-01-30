@@ -17,7 +17,7 @@ std::array<char, DigestT::length * 2 + 1> to_string(const DigestT &digest){
 }
 
 void test_md5(const char *data, const char *sum){
-	std::string digest = Hashes::Algorithms::MD5::compute(data, strlen(data));
+	std::string digest = hash::algorithm::MD5::compute(data, strlen(data));
 	if (digest != sum){
 		std::stringstream stream;
 		stream << "Failed test: md5(" << data << ") != " << sum;

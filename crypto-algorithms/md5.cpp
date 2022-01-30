@@ -114,8 +114,8 @@ static const MetaParameters metaparameters[4] = {
 	{ transform<f4>, parameters + 16 * 3 },
 };
 
-namespace Hashes{
-namespace Digests{
+namespace hash{
+namespace digest{
 
 int MD5::cmp(const MD5 &other) const{
 	return memcmp(this->digest.data(), other.digest.data(), this->digest.size());
@@ -135,7 +135,7 @@ void MD5::write_to_char_vector(std::vector<char> &s) const{
 
 } //Digests
 
-namespace Algorithms{
+namespace algorithm{
 
 
 void MD5::transform() noexcept{
@@ -191,7 +191,7 @@ void MD5::update(const void *void_buffer, size_t length) noexcept{
 	}
 }
 
-Digests::MD5 MD5::get_digest() noexcept{
+digest::MD5 MD5::get_digest() noexcept{
 	size_t i = this->datalen;
 
 	// Pad whatever data is left in the buffer.
@@ -213,7 +213,7 @@ Digests::MD5 MD5::get_digest() noexcept{
 		this->data[56 + j] = (std::uint8_t)(this->bitlen >> (8 * j));
 	this->transform();
 
-	Digests::MD5::digest_t ret;
+	digest::MD5::digest_t ret;
 
 	// Since this implementation uses little endian byte ordering and MD uses big endian,
 	// reverse all the bytes when copying the final state to the output hash.
@@ -227,6 +227,6 @@ Digests::MD5 MD5::get_digest() noexcept{
 	return ret;
 }
 
-} //Algorithms
+}
 
-} //Hashes
+}

@@ -1,59 +1,15 @@
 #include "twofish.hpp"
 #include "hash.hpp"
+#include "test_block.hpp"
 #include <exception>
 #include <algorithm>
 #include <array>
 #include <iostream>
 #include <sstream>
 
-template <size_t N>
-Twofish::TwofishKey<N> set_key(const char *s){
-	auto l = strlen(s);
-	if (l != N * 2 / 8)
-		throw std::exception();
-	std::uint8_t buffer[N / 8];
-	for (auto &b : buffer){
-		b = Hashes::detail::hex2val(*(s++)) << 4;
-		b |= Hashes::detail::hex2val(*(s++));
-	}
-	Twofish::TwofishKey<N> ret(buffer);
-	return ret;
-}
+namespace{
 
-static std::array<std::uint8_t, Twofish::block_size> block_from_string(const char *s){
-	auto l = strlen(s);
-	if (l != Twofish::block_size * 2)
-		throw std::exception();
-	std::array<std::uint8_t, Twofish::block_size> ret;
-	for (auto &b : ret){
-		b = Hashes::detail::hex2val(*(s++)) << 4;
-		b |= Hashes::detail::hex2val(*(s++));
-	}
-	return ret;
-}
-
-template <size_t N>
-void test_twofish_with_vector(const char *key_string, const char *plaintext_string, const char *ciphertext_string){
-	auto key = set_key<N>(key_string);
-	auto plaintext = block_from_string(plaintext_string);
-	auto expected_ciphertext = block_from_string(ciphertext_string);
-	char temp[Twofish::block_size];
-	Twofish::Twofish<N> twofish(key);
-	twofish.encrypt_block(temp, plaintext.data());
-	if (memcmp(temp, expected_ciphertext.data(), Twofish::block_size)){
-		std::stringstream stream;
-		stream << "Twofish-" << N << " failed to encrypt correctly with key=" << key_string << ", plaintext=" << plaintext_string << ", ciphertext=" << ciphertext_string;
-		throw std::runtime_error(stream.str());
-	}
-	twofish.decrypt_block(temp, temp);
-	if (memcmp(temp, plaintext.data(), Twofish::block_size)){
-		std::stringstream stream;
-		stream << "Twofish-" << N << " failed to decrypt correctly with key=" << key_string << ", plaintext=" << plaintext_string << ", ciphertext=" << ciphertext_string;
-		throw std::runtime_error(stream.str());
-	}
-}
-
-static void test_twofish_with_vectors(){
+void test_twofish_with_vectors(){
 	static const char * const v[3][4][3] = {
 		//128-bit key
 		{
@@ -79,14 +35,11 @@ static void test_twofish_with_vectors(){
 	};
 	
 	int i = 0;
-	for (int j = 0; j < 4; j++)
-		test_twofish_with_vector<128>(v[i][j][0], v[i][j][1], v[i][j][2]);
-	i++;
-	for (int j = 0; j < 4; j++)
-		test_twofish_with_vector<192>(v[i][j][0], v[i][j][1], v[i][j][2]);
-	i++;
-	for (int j = 0; j < 4; j++)
-		test_twofish_with_vector<256>(v[i][j][0], v[i][j][1], v[i][j][2]);
+	test_block_cipher_with_vectors<symmetric::Twofish<128>>(v[i++], "Twofish-128");
+	test_block_cipher_with_vectors<symmetric::Twofish<192>>(v[i++], "Twofish-192");
+	test_block_cipher_with_vectors<symmetric::Twofish<256>>(v[i++], "Twofish-256");
+}
+
 }
 
 void test_twofish(){

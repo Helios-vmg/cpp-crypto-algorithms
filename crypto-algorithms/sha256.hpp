@@ -7,9 +7,9 @@
 #include <vector>
 #include <ostream>
 
-namespace Hashes{
+namespace hash{
 
-namespace Digests{
+namespace digest{
 
 class SHA256{
 public:
@@ -23,7 +23,7 @@ public:
 		memset(this->digest.data(), 0, size);
 	}
 	SHA256(const std::string &digest);
-	SHA256(const char *digest, size_t size);
+	SHA256(const char *digest, size_t size = 0);
 	SHA256(const digest_t &digest): digest(digest){}
 	SHA256(const SHA256 &other) = default;
 	int cmp(const SHA256 &other) const;
@@ -69,7 +69,7 @@ public:
 
 } //Digests
 
-namespace Algorithms{
+namespace algorithm{
 
 class SHA256 : public HashAlgorithm{
 	std::uint8_t data[64];
@@ -86,39 +86,39 @@ public:
 	SHA256 &operator=(const SHA256 &) = default;
 	void reset() noexcept override;
 	void update(const void *buffer, size_t length) noexcept override;
-	Digests::SHA256 get_digest() noexcept;
-	static Digests::SHA256 compute(const void *buffer, size_t length) noexcept{
+	digest::SHA256 get_digest() noexcept;
+	static digest::SHA256 compute(const void *buffer, size_t length) noexcept{
 		SHA256 hash;
 		hash.update(buffer, length);
 		return hash.get_digest();
 	}
-	static Digests::SHA256 compute(const char *input) noexcept{
+	static digest::SHA256 compute(const char *input) noexcept{
 		SHA256 hash;
 		hash.update(input, strlen(input));
 		return hash.get_digest();
 	}
-	static Digests::SHA256 compute(const std::string &input) noexcept{
+	static digest::SHA256 compute(const std::string &input) noexcept{
 		SHA256 hash;
 		hash.update(input.c_str(), input.size());
 		return hash.get_digest();
 	}
 };
 
-} //Algorithms
+}
 
-} //Hashes
+}
 
-inline std::ostream &operator<<(std::ostream &stream, const Hashes::Digests::SHA256 &digest){
+inline std::ostream &operator<<(std::ostream &stream, const hash::digest::SHA256 &digest){
 	return stream << (std::string)digest;
 }
 
 namespace std{
 
 template <>
-struct hash<Hashes::Digests::SHA256>{
-	size_t operator()(const Hashes::Digests::SHA256 &key) const noexcept{
+struct hash<::hash::digest::SHA256>{
+	size_t operator()(const ::hash::digest::SHA256 &key) const noexcept{
 		return key.std_hash();
 	}
 };
 
-} //std
+}

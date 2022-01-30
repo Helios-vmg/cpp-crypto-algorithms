@@ -14,7 +14,7 @@ int main(){
 		test_sha256();
 		test_aes();
 		test_twofish();
-		test_secp256k1();
+		//test_secp256k1();
 	}catch (std::exception &e){
 		std::cerr << e.what() << std::endl;
 		return -1;

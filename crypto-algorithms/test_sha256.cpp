@@ -4,7 +4,7 @@
 #include <iostream>
 
 void test_256(const char *data, const char *sum){
-	auto digest = Hashes::Algorithms::SHA256::compute(data, strlen(data));
+	auto digest = hash::algorithm::SHA256::compute(data, strlen(data));
 	auto string = (std::string)digest;
 	if (string != sum){
 		std::stringstream stream;

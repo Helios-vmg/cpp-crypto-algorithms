@@ -1,9 +1,9 @@
 #include "aes.hpp"
 
-namespace AES{
-namespace detail{
+namespace symmetric{
+namespace {
 
-static const std::uint8_t sbox[] = {
+const std::uint8_t sbox[] = {
 	0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
 	0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
 	0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
@@ -29,7 +29,7 @@ std::array<std::uint8_t, 256> initialize_inverted_sbox(){
 	return ret;
 }
 
-static const std::array<std::uint8_t, 256> inverted_sbox = initialize_inverted_sbox();
+const std::array<std::uint8_t, 256> inverted_sbox = initialize_inverted_sbox();
 
 // This table stores pre-calculated values for all possible GF(2^8) calculations.This
 // table is only used by the (Inv)MixColumns steps.
@@ -37,7 +37,7 @@ static const std::array<std::uint8_t, 256> inverted_sbox = initialize_inverted_s
 // coefficients are used: 0x01, 0x02, 0x03, 0x09, 0x0b, 0x0d, 0x0e, but multiplication by
 // 1 is negligible leaving only 6 coefficients. Each column of the table is devoted to one
 // of these coefficients, in the ascending order of value, from values 0x00 to 0xFF.
-static const std::uint8_t gf_mul[256][6] = {
+const std::uint8_t gf_mul[256][6] = {
 	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
 	{ 0x02, 0x03, 0x09, 0x0b, 0x0d, 0x0e },
 	{ 0x04, 0x06, 0x12, 0x16, 0x1a, 0x1c },
@@ -417,4 +417,112 @@ std::uint32_t subword(uint32_t word){
 }
 
 }
+
+template <size_t Size>
+Aes<Size>::KeySchedule::KeySchedule(const key_t &key){
+	static const std::uint32_t rcon[] = {
+		0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
+		0x20000000, 0x40000000, 0x80000000, 0x1b000000, 0x36000000,
+		0x6c000000, 0xd8000000, 0xab000000, 0x4d000000, 0x9a000000,
+	};
+	constexpr int n = key_t::size;
+	memcpy(this->schedule, key.data().data(), n);
+
+	for (int i = n / 4; i < size; i++){
+		std::uint32_t temp;
+		temp = (std::uint32_t)this->schedule[(i - 1) * 4 + 0] << 24;
+		temp |= (std::uint32_t)this->schedule[(i - 1) * 4 + 1] << 16;
+		temp |= (std::uint32_t)this->schedule[(i - 1) * 4 + 2] << 8;
+		temp |= (std::uint32_t)this->schedule[(i - 1) * 4 + 3];
+		if (i % (n / 4) == 0)
+			temp = subword(rotate32(temp)) ^ rcon[(i - 1) / (n / 4)];
+		else if (n > 24 && i % (n / 4) == 4)
+			temp = subword(temp);
+		this->schedule[i * 4 + 0] = this->schedule[i * 4 + 0 - n] ^ ((temp >> 24) & 0xFF);
+		this->schedule[i * 4 + 1] = this->schedule[i * 4 + 1 - n] ^ ((temp >> 16) & 0xFF);
+		this->schedule[i * 4 + 2] = this->schedule[i * 4 + 2 - n] ^ ((temp >> 8) & 0xFF);
+		this->schedule[i * 4 + 3] = this->schedule[i * 4 + 3 - n] ^ (temp & 0xFF);
+	}
+}
+
+template <size_t Size>
+void Aes<Size>::encrypt_block(void *void_dst, const void *void_src) const noexcept{
+	auto src = (const std::uint8_t *)void_src;
+	auto dst = (std::uint8_t *)void_dst;
+	if (dst != src){
+		dst[0x0] = src[0x0];
+		dst[0x1] = src[0x1];
+		dst[0x2] = src[0x2];
+		dst[0x3] = src[0x3];
+		dst[0x4] = src[0x4];
+		dst[0x5] = src[0x5];
+		dst[0x6] = src[0x6];
+		dst[0x7] = src[0x7];
+		dst[0x8] = src[0x8];
+		dst[0x9] = src[0x9];
+		dst[0xA] = src[0xA];
+		dst[0xB] = src[0xB];
+		dst[0xC] = src[0xC];
+		dst[0xD] = src[0xD];
+		dst[0xE] = src[0xE];
+		dst[0xF] = src[0xF];
+	}
+
+	auto key = this->key.data();
+
+	add_round_key(dst, key);
+	for (auto i = rounds - 2; i--;){
+		key += 16;
+		sub_bytes(dst);
+		shift_rows(dst);
+		mix_columns(dst);
+		add_round_key(dst, key);
+	}
+	sub_bytes(dst);
+	shift_rows(dst);
+	add_round_key(dst, key + 16);
+}
+
+template <size_t Size>
+void Aes<Size>::decrypt_block(void *void_dst, const void *void_src) const noexcept{
+	auto src = (const std::uint8_t *)void_src;
+	auto dst = (std::uint8_t *)void_dst;
+	if (dst != src){
+		dst[0x0] = src[0x0];
+		dst[0x1] = src[0x1];
+		dst[0x2] = src[0x2];
+		dst[0x3] = src[0x3];
+		dst[0x4] = src[0x4];
+		dst[0x5] = src[0x5];
+		dst[0x6] = src[0x6];
+		dst[0x7] = src[0x7];
+		dst[0x8] = src[0x8];
+		dst[0x9] = src[0x9];
+		dst[0xA] = src[0xA];
+		dst[0xB] = src[0xB];
+		dst[0xC] = src[0xC];
+		dst[0xD] = src[0xD];
+		dst[0xE] = src[0xE];
+		dst[0xF] = src[0xF];
+	}
+
+	auto key = this->key.data() + (rounds - 1) * 16;
+
+	add_round_key(dst, key);
+	for (auto i = rounds - 2; i--;){
+		key -= 16;
+		invert_shift_rows(dst);
+		invert_sub_bytes(dst);
+		add_round_key(dst, key);
+		invert_mix_columns(dst);
+	}
+	invert_shift_rows(dst);
+	invert_sub_bytes(dst);
+	add_round_key(dst, key - 16);
+}
+
+template class Aes<128>;
+template class Aes<192>;
+template class Aes<256>;
+
 }

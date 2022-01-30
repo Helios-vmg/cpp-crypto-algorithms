@@ -1,8 +1,20 @@
 #include "twofish.hpp"
 
-namespace Twofish{
+namespace {
+/*
+ * Reed-Solomon code parameters: (12,8) reversible code
+ * g(x) = x^4 + (a + 1/a) * x^3 + a * x^2 + (a + 1/a) x + 1
+ * where a is the primitive root of field generator 0x14D
+ */
+const std::uint32_t reed_solomon_field_generator = 0x14D;
+const std::uint32_t mds_primitive_poly = 0x169;
 
-namespace detail{
+const char permutation[4][5] = {
+	{1, 0, 0, 1, 1},
+	{0, 0, 1, 1, 0},
+	{1, 1, 0, 0, 0},
+	{0, 1, 1, 0, 1},
+};
 
 /* fixed 8x8 permutation S-boxes */
 
@@ -104,6 +116,311 @@ extern const std::uint8_t P8x8[2][256] = {
 	}
 };
 
+const auto m = sizeof(std::uint32_t);
+template <size_t N>
+struct x_size{
+	static const auto value = symmetric::Twofish<N>::block_size / m;
+};
+template <size_t N>
+using x_t = std::array<std::uint32_t, x_size<N>::value>;
+template <size_t N>
+using K = typename symmetric::Twofish<N>::KeySchedule;
+
+template <size_t Size>
+void do_round(int r, x_t<Size> &x, const K<Size> &key){
+	static const auto rs = symmetric::Twofish<Size>::round_subkeys;
+
+	auto &sbk = key.sbox_keys;
+	auto sk = key.sub_keys + rs + 2 * r;
+	
+	auto t0	 = f32<Size>(    x[0]    , sbk);
+	auto t1	 = f32<Size>(rotate_left(x[1], 8), sbk);
+
+	x[3] = rotate_left(x[3],1);
+
+	//PHT, round keys
+	x[2] ^= t0 +     t1 + sk[0];
+	x[3] ^= t0 + 2 * t1 + sk[1];
+
+	x[2] = rotate_right(x[2], 1);
 }
+
+template <size_t Size>
+void undo_round(int r, x_t<Size> &x, const K<Size> &key){
+	static const auto rs = symmetric::Twofish<Size>::round_subkeys;
+
+	auto &sbk = key.sbox_keys;
+	auto sk = key.sub_keys + rs + 2 * r;
+	
+	auto t0	 = f32<Size>(    x[0]    , sbk);
+	auto t1	 = f32<Size>(rotate_left(x[1], 8), sbk);
+
+	x[2] = rotate_left(x[2], 1);
+	
+	//PHT, round keys
+	x[2] ^= t0 +     t1 + sk[0];
+	x[3] ^= t0 + 2 * t1 + sk[1];
+	
+	x[3] = rotate_right(x[3], 1);
+}
+
+template <size_t Size>
+x_t<Size> load_block(const std::uint8_t *block, size_t offset, const K<Size> &key){
+	x_t<Size> ret;
+	for (size_t i = 0; i < x_size<Size>::value; i++){
+		auto p = block + i * 4;
+		ret[i]  = *(p++);
+		ret[i] |= *(p++) <<  8;
+		ret[i] |= *(p++) << 16;
+		ret[i] |= *(p  ) << 24;
+		ret[i] ^= key.sub_keys[offset + i];
+	}
+	return ret;
+}
+
+template <size_t Size>
+void unload_block(std::uint8_t *block, const x_t<Size> &x, size_t offset, const K<Size> &key){
+	for (size_t i = 0; i < x_size<Size>::value; i++){
+		auto y = x[i] ^ key.sub_keys[offset + i];
+		auto p = block + i * 4;
+		*(p++) = (y      ) & 0xFF;
+		*(p++) = (y >>  8) & 0xFF;
+		*(p++) = (y >> 16) & 0xFF;
+		*(p  ) = (y >> 24) & 0xFF;
+	}
+}
+
+std::uint8_t get_byte(std::uint32_t n, int i){
+	return (std::uint8_t)(n >> (i * 8));
+}
+
+auto &p9(int x, int y){
+	return P8x8[(int)permutation[x][y]];
+};
+
+std::uint32_t LFSR1(std::uint32_t x){
+	auto a = x >> 1;
+	auto b = x & 1;
+	b *= mds_primitive_poly / 2;
+	return a ^ b;
+}
+
+std::uint32_t LFSR2(std::uint32_t x){
+	auto a = x >> 2;
+	auto b = (x & 2) >> 1;
+	auto c = x & 1;
+	b *= mds_primitive_poly / 2;
+	c *= mds_primitive_poly / 4;
+	return a ^ b ^ c;
+}
+
+//force result to dword so << will work
+std::uint32_t Mx_I(std::uint32_t x){
+	return x;
+}
+
+std::uint32_t Mx_X(std::uint32_t x){
+	//5B
+	return Mx_I(x) ^ LFSR2(x);
+}
+
+std::uint32_t Mx_Y(std::uint32_t x){
+	//EF
+	return Mx_X(x) ^ LFSR1(x);
+}
+
+const char I = 0;
+const char X = 1;
+const char Y = 2;
+
+const char M[4][4] = {
+	{I,Y,X,X},
+	{X,Y,Y,I},
+	{Y,X,I,Y},
+	{Y,I,Y,X},
+};
+typedef std::uint32_t (*mul_f)(std::uint32_t);
+const mul_f MT[] = {
+	Mx_I,
+	Mx_X,
+	Mx_Y,
+};
+
+//rem=???
+std::uint32_t reed_solomon_rem(std::uint32_t x){
+	auto b  = (std::uint8_t) (x >> 24);
+	std::uint32_t g2 = ((b << 1) ^ ((b & 0x80) ? reed_solomon_field_generator : 0u )) & 0xFF;
+	std::uint32_t g3 = ((b >> 1) & 0x7Fu) ^ ((b & 1) ? reed_solomon_field_generator >> 1 : 0u ) ^ g2 ;
+	x <<= 8;
+	auto g4 = g3 << 8;
+	g2 <<= 16;
+	g3 <<= 24;
+	return x ^ g3 ^ g2 ^ g4 ^ b;
+}
+
+//mds=???
+std::uint32_t reed_solomon_mds_encode(std::uint32_t k0, std::uint32_t k1){
+	std::uint32_t r = 0;
+	r = k1;
+	//shift one byte at a time
+	for (int j = 0; j < 4; j++)
+		r = reed_solomon_rem(r);
+	r ^= k0;
+	for (int j = 0; j < 4; j++)
+		r = reed_solomon_rem(r);
+	return r;
+}
+
+template <size_t Size>
+struct f32_helper{};
+
+template <>
+struct f32_helper<128>{
+	static void f(const std::uint32_t *k32, std::uint8_t (&b)[4]){
+		for (int i = 0; i < 4; i++){
+			auto a0 = p9(i, 2)[b[i]];
+			auto a1 = get_byte(k32[1], i);
+			auto a2 = p9(i, 1)[a0 ^ a1];
+			auto a3 = get_byte(k32[0], i);
+			b[i] = p9(i, 0)[a2 ^ a3];
+		}
+	}
+};
+
+template <>
+struct f32_helper<192>{
+	static void f(const std::uint32_t *k32, std::uint8_t (&b)[4]){
+		for (int i = 0; i < 4; i++)
+			b[i] = p9(i, 3)[b[i]] ^ get_byte(k32[2], i);
+		f32_helper<128>::f(k32, b);
+	}
+};
+
+template <>
+struct f32_helper<256>{
+	static void f(const std::uint32_t *k32, std::uint8_t (&b)[4]){
+		for (int i = 0; i < 4; i++)
+			b[i] = p9(i, 4)[b[i]] ^ get_byte(k32[3], i);
+		f32_helper<192>::f(k32, b);
+	}
+};
+
+template <size_t Size>
+std::uint32_t f32(std::uint32_t x, const std::uint32_t *k32){
+	std::uint8_t b[4];
+	
+	//Run each byte through 8x8 S-boxes, xoring with key byte at each stage.
+	//Note that each byte goes through a different combination of S-boxes.
+
+	for (int i = 0; i < 4; i++)
+		b[i] = (x >> (i * 8)) & 0xFF;
+
+	f32_helper<Size>::f(k32, b);
+
+	//Now perform the MDS matrix multiply
+	std::uint32_t ret = 0;
+	for (int i = 0; i < 4; i++){
+		std::uint32_t a = 0;
+		auto &m = M[i];
+		for (int j = 0; j < 4; j++)
+			a ^= MT[m[j]](b[j]);
+		ret ^= a << (i * 8);
+	}
+	return ret;
+}
+
+std::uint32_t rotate_left(std::uint32_t x, std::uint32_t n){
+	auto shift = n & 31;
+	auto a = x << shift;
+	auto b = x >> (32 - shift);
+	return a | b;
+}
+
+std::uint32_t rotate_right(std::uint32_t x, std::uint32_t n){
+	return rotate_left(x, 32 - (n & 31));
+}
+
+}
+
+namespace symmetric{
+
+template <size_t Size>
+Twofish<Size>::KeySchedule::KeySchedule(const key_t &key){
+	static const size_t key32_size = Size / 32;
+	std::uint32_t key32[key32_size] = {0};
+	{
+		static const size_t m = sizeof(std::uint32_t);
+		size_t i = 0;
+		for (auto b : key.data()){
+			key32[i / m] |= b << (i % m * 8);
+			i++;
+		}
+	}
+
+	static const size_t n = key32_size / 2;
+	std::uint32_t k32_even[n];
+	std::uint32_t k32_odd[n];
+	for (size_t i = 0; i < n; i++){
+		auto e = k32_even[i] = key32[i * 2 + 0];
+		auto o = k32_odd[i] = key32[i * 2 + 1];
+		this->sbox_keys[n - 1 - i] = reed_solomon_mds_encode(e, o);
+	}
+
+	static const int subkeyCnt = round_subkeys + 2 * rounds;
+
+	static const std::uint32_t SK_STEP = 0x02020202;
+	static const std::uint32_t SK_BUMP = 0x01010101;
+	static const std::uint32_t SK_ROTL = 9;
+
+	//compute round subkeys for PHT
+	for (auto i = 0; i < subkeyCnt / 2; i++){
+		//A uses even key dwords
+		auto A = f32<Size>(i * SK_STEP, k32_even);
+		//B uses odd  key dwords
+		auto B = f32<Size>(i * SK_STEP + SK_BUMP, k32_odd);
+		B = rotate_left(B, 8);
+		//combine with a PHT
+		this->sub_keys[2 * i + 0] = A + B;
+		this->sub_keys[2 * i + 1] = rotate_left(A + 2 * B, SK_ROTL);
+	}
+}
+
+template <size_t Size>
+void Twofish<Size>::encrypt_block(void *void_dst, const void *void_src) const noexcept{
+	auto src = (const std::uint8_t *)void_src;
+	auto dst = (std::uint8_t *)void_dst;
+
+	auto x = load_block<Size>(src, 0, this->key);
+
+	for (int r = 0; r < rounds - 1; r++){
+		do_round<Size>(r, x, this->key);
+		std::swap(x[0], x[2]);
+		std::swap(x[1], x[3]);
+	}
+	do_round<Size>(rounds - 1, x, this->key);
+
+	unload_block<Size>(dst, x, output_whiten, this->key);
+}
+
+template <size_t Size>
+void Twofish<Size>::decrypt_block(void *void_dst, const void *void_src) const noexcept{
+	auto src = (const std::uint8_t *)void_src;
+	auto dst = (std::uint8_t *)void_dst;
+	
+	auto x = load_block<Size>(src, output_whiten, this->key);
+
+	for (auto r = rounds; r-- > 1;){
+		undo_round<Size>(r, x, this->key);
+		std::swap(x[0], x[2]);
+		std::swap(x[1], x[3]);
+	}
+	undo_round<Size>(0, x, this->key);
+	
+	unload_block<Size>(dst, x, 0, this->key);
+}
+
+template class Twofish<128>;
+template class Twofish<192>;
+template class Twofish<256>;
 
 }

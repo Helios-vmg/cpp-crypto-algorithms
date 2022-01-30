@@ -2,6 +2,7 @@
 #include "test_utility.hpp"
 #include "sha256.hpp"
 #include "ECDSA.hpp"
+#include "hex.hpp"
 #include <iostream>
 #include <chrono>
 
@@ -13,7 +14,7 @@ std::unique_ptr<DstT> static_pointer_cast(std::unique_ptr<SrcT> &&p){
 static void test_secp256k1(const char *digest_string, const char *private_key_string, const char *public_key_string, const char *nonce_string, const char *r_string, const char *s_string){
 	using namespace ECDSA::Secp256k1;
 	
-	auto digest = hex_string_to_buffer<32>(digest_string);
+	auto digest = utility::hex_string_to_buffer<32>(digest_string);
 	std::reverse(digest.begin(), digest.end());
 	PrivateKey private_key(BigNum<1024>::from_hex_string(private_key_string));
 	Nonce nonce(BigNum<1024>::from_hex_string(nonce_string));
@@ -35,7 +36,7 @@ static void test_secp256k1(const char *digest_string, const char *private_key_st
 
 
 static void test_secp256k1(const char *original_message, const char *digest_string, const char *private_key_string, const char *public_key_string, const char *nonce_string, const char *r_string, const char *s_string){
-	std::string string = Hashes::Algorithms::SHA256::compute(original_message, strlen(original_message));
+	std::string string = hash::algorithm::SHA256::compute(original_message, strlen(original_message));
 	if (string != digest_string)
 		throw std::runtime_error("Secp256k1 failed hashing test");
 	test_secp256k1(digest_string, private_key_string, public_key_string, nonce_string, r_string, s_string);

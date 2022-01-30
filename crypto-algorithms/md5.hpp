@@ -8,9 +8,9 @@
 #include <vector>
 #include <sstream>
 
-namespace Hashes{
+namespace hash{
 
-namespace Digests{
+namespace digest{
 
 class MD5{
 public:
@@ -68,7 +68,7 @@ public:
 
 } //Digests
 
-namespace Algorithms{
+namespace algorithm{
 
 class MD5 : public HashAlgorithm{
 	std::uint8_t data[64];
@@ -85,39 +85,39 @@ public:
 	MD5 &operator=(const MD5 &) = default;
 	void reset() noexcept override;
 	void update(const void *buffer, size_t length) noexcept override;
-	Digests::MD5 get_digest() noexcept;
-	static Digests::MD5 compute(const void *buffer, size_t length) noexcept{
+	digest::MD5 get_digest() noexcept;
+	static digest::MD5 compute(const void *buffer, size_t length) noexcept{
 		MD5 hash;
 		hash.update(buffer, length);
 		return hash.get_digest();
 	}
-	static Digests::MD5 compute(const char *input) noexcept{
+	static digest::MD5 compute(const char *input) noexcept{
 		MD5 hash;
 		hash.update(input, strlen(input));
 		return hash.get_digest();
 	}
-	static Digests::MD5 compute(const std::string &input) noexcept{
+	static digest::MD5 compute(const std::string &input) noexcept{
 		MD5 hash;
 		hash.update(input.c_str(), input.size());
 		return hash.get_digest();
 	}
 };
 
-} //Algorithms
+}
 
-} //Hashes
+}
 
-inline std::ostream &operator<<(std::ostream &stream, const Hashes::Digests::MD5 &digest){
+inline std::ostream &operator<<(std::ostream &stream, const hash::digest::MD5 &digest){
 	return stream << (std::string)digest;
 }
 
 namespace std{
 
 template <>
-struct hash<Hashes::Digests::MD5>{
-	size_t operator()(const Hashes::Digests::MD5 &key) const noexcept{
+struct hash<::hash::digest::MD5>{
+	size_t operator()(const ::hash::digest::MD5 &key) const noexcept{
 		return key.std_hash();
 	}
 };
 
-} //std
+}

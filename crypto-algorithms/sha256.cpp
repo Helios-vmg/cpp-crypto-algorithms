@@ -1,4 +1,5 @@
 #include "sha256.hpp"
+#include "hex.hpp"
 #include <cstring>
 
 static std::uint32_t rotate_left(std::uint32_t a, std::uint32_t b){
@@ -44,22 +45,14 @@ static const std::uint32_t k[64] = {
 	0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 };
 
-namespace Hashes{
+namespace hash{
 
-namespace Digests{
+namespace digest{
 
 SHA256::SHA256(const std::string &digest): SHA256(digest.c_str(), digest.size()){}
 
 SHA256::SHA256(const char *digest, size_t size){
-	if (size != this->size * 2)
-		throw InvalidHexException();
-	int j = 0;
-	for (int i = this->size; i--;){
-		std::uint8_t b = detail::hex2val(digest[j++]);
-		b <<= 4;
-		b |= detail::hex2val(digest[j++]);
-		this->digest[i] = b;
-	}
+	this->digest = utility::hex_string_to_buffer<this->size>(digest, size);
 }
 
 int SHA256::cmp(const SHA256 &other) const{
@@ -80,7 +73,7 @@ void SHA256::write_to_char_vector(std::vector<char> &s) const{
 
 }
 
-namespace Algorithms{
+namespace algorithm{
 
 void SHA256::reset() noexcept{
 	this->datalen = 0;
@@ -108,7 +101,7 @@ void SHA256::update(const void *void_buffer, size_t length) noexcept{
 	}
 }
 
-Digests::SHA256 SHA256::get_digest() noexcept{
+digest::SHA256 SHA256::get_digest() noexcept{
 	auto i = this->datalen;
 
 	// Pad whatever data is left in the buffer.
@@ -136,7 +129,7 @@ Digests::SHA256 SHA256::get_digest() noexcept{
 	this->data[56] = (std::uint8_t)(this->bitlen >> 56);
 	this->transform();
 
-	Digests::SHA256::digest_t ret;
+	digest::SHA256::digest_t ret;
 
 	// Since this implementation uses little endian byte ordering and SHA uses big endian,
 	// reverse all the bytes when copying the final state to the output hash.
@@ -197,6 +190,6 @@ void SHA256::transform() noexcept{
 	this->state[7] += h;
 }
 
-} //Algorithms
+}
 
-} //Hashes
+}

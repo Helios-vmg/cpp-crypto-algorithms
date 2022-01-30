@@ -1,99 +1,19 @@
 #include "aes.hpp"
-#include "md5.hpp"
+#include "sha256.hpp"
+#include "test_block.hpp"
 #include "hash.hpp"
 #include <iostream>
 #include <sstream>
 
-template <size_t N>
+namespace {
+
 void test_aes_sanity(){
-	const char * const passphrases[] = {
-		"",
-		"hello",
-		"engouement cardophagus ipseity kalamkari",
-	};
-
-	for (auto passphrase : passphrases){
-		auto digest = Hashes::Algorithms::MD5::compute(passphrase, strlen(passphrase)).to_array();
-		AES::AesKey<N> key(digest.data());
-		AES::Aes<N> aes(key);
-		const char plaintext[] = "ABCDEFGHIJKLMNOP";
-		char ciphertext[AES::block_size];
-		aes.encrypt_block(ciphertext, plaintext);
-		char decrypted[AES::block_size];
-		aes.decrypt_block(decrypted, ciphertext);
-
-		if (memcmp(decrypted, plaintext, AES::block_size)){
-			std::stringstream stream;
-			stream << "AES-" << N << " failed test 1 for passphrase \"" << passphrase << "\"";
-			throw std::runtime_error(stream.str());
-		}
-
-		char ciphertext2[AES::block_size];
-		aes.encrypt_block(ciphertext2, ciphertext);
-		aes.decrypt_block(decrypted, ciphertext2);
-
-		if (memcmp(decrypted, ciphertext, AES::block_size)){
-			std::stringstream stream;
-			stream << "AES-" << N << " failed test 2 for passphrase \"" << passphrase << "\"";
-			throw std::runtime_error(stream.str());
-		}
-	}
+	test_block_cipher_sanity<symmetric::Aes<128>>("AES-128");
+	test_block_cipher_sanity<symmetric::Aes<192>>("AES-192");
+	test_block_cipher_sanity<symmetric::Aes<256>>("AES-256");
 }
 
-static void test_aes_sanity(){
-	test_aes_sanity<128>();
-	test_aes_sanity<192>();
-	test_aes_sanity<256>();
-}
-
-template <size_t N>
-AES::AesKey<N> set_key(const char *s){
-	auto l = strlen(s);
-	if (l != N * 2 / 8)
-		throw std::exception();
-	std::uint8_t buffer[N / 8];
-	for (auto &b : buffer){
-		b = Hashes::detail::hex2val(*(s++)) << 4;
-		b |= Hashes::detail::hex2val(*(s++));
-	}
-	AES::AesKey<N> ret(buffer);
-	return ret;
-}
-
-static std::array<std::uint8_t, AES::block_size> block_from_string(const char *s){
-	auto l = strlen(s);
-	if (l != AES::block_size * 2)
-		throw std::exception();
-	std::array<std::uint8_t, AES::block_size> ret;
-	for (auto &b : ret){
-		b = Hashes::detail::hex2val(*(s++)) << 4;
-		b |= Hashes::detail::hex2val(*(s++));
-	}
-	return ret;
-}
-
-template <size_t N>
-void test_aes_with_vector(const char *key_string, const char *plaintext_string, const char *ciphertext_string){
-	auto key = set_key<N>(key_string);
-	auto plaintext = block_from_string(plaintext_string);
-	auto expected_ciphertext = block_from_string(ciphertext_string);
-	char temp[AES::block_size];
-	AES::Aes<N> aes(key);
-	aes.encrypt_block(temp, plaintext.data());
-	if (memcmp(temp, expected_ciphertext.data(), AES::block_size)){
-		std::stringstream stream;
-		stream << "AES-" << N << " failed to encrypt correctly with key=" << key_string << ", plaintext=" << plaintext_string << ", ciphertext=" << ciphertext_string;
-		throw std::runtime_error(stream.str());
-	}
-	aes.decrypt_block(temp, temp);
-	if (memcmp(temp, plaintext.data(), AES::block_size)){
-		std::stringstream stream;
-		stream << "AES-" << N << " failed to decrypt correctly with key=" << key_string << ", plaintext=" << plaintext_string << ", ciphertext=" << ciphertext_string;
-		throw std::runtime_error(stream.str());
-	}
-}
-
-static void test_aes_with_vectors(){
+void test_aes_with_vectors(){
 	static const char * const v[3][4][3] = {
 		//128-bit key
 		{
@@ -118,14 +38,11 @@ static void test_aes_with_vectors(){
 		},
 	};
 	int i = 0;
-	for (int j = 0; j < 4; j++)
-		test_aes_with_vector<128>(v[i][j][0], v[i][j][1], v[i][j][2]);
-	i++;
-	for (int j = 0; j < 4; j++)
-		test_aes_with_vector<192>(v[i][j][0], v[i][j][1], v[i][j][2]);
-	i++;
-	for (int j = 0; j < 4; j++)
-		test_aes_with_vector<256>(v[i][j][0], v[i][j][1], v[i][j][2]);
+	test_block_cipher_with_vectors<symmetric::Aes<128>>(v[i++], "AES-128");
+	test_block_cipher_with_vectors<symmetric::Aes<192>>(v[i++], "AES-192");
+	test_block_cipher_with_vectors<symmetric::Aes<256>>(v[i++], "AES-256");
+}
+
 }
 
 void test_aes(){
