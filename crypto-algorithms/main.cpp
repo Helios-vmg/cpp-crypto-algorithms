@@ -4,6 +4,7 @@
 #include "test_twofish.hpp"
 #include "test_secp256k1.hpp"
 #include "test_bignum.hpp"
+#include "test_stream.hpp"
 #include <iostream>
 #include <exception>
 
@@ -15,6 +16,7 @@ int main(){
 		test_aes();
 		test_twofish();
 		test_secp256k1();
+		test_stream();
 	}catch (std::exception &e){
 		std::cerr << e.what() << std::endl;
 		return -1;
