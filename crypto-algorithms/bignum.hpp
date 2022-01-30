@@ -124,13 +124,11 @@ public:
 		this->data[0] = (uintptr_t)(typename std::make_unsigned<x>::type)value; \
 		std::fill(this->data + 1, this->data + numbers, 0); \
 	}
-	//DEFINE_BIGNUM_CONSTRUCTOR(uintptr_t)
+	DEFINE_BIGNUM_CONSTRUCTOR(uintptr_t)
 	DEFINE_BIGNUM_CONSTRUCTOR(int)
-	DEFINE_BIGNUM_CONSTRUCTOR(unsigned)
 	DEFINE_BIGNUM_CONSTRUCTOR(long)
-	DEFINE_BIGNUM_CONSTRUCTOR(unsigned long)
+	DEFINE_BIGNUM_CONSTRUCTOR(long long)
 	DEFINE_BIGNUM_CONSTRUCTOR(short)
-	DEFINE_BIGNUM_CONSTRUCTOR(unsigned short)
 
 	BigNum(const void *void_buffer, size_t n): BigNum(){
 		auto buffer = (const std::uint8_t *)void_buffer;
