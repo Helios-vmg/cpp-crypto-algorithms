@@ -11,7 +11,7 @@ namespace symmetric{
 template <size_t TBlockSize>
 class BlockCipher{
 public:
-	static const size_t block_size = TBlockSize;
+	static inline const size_t block_size = TBlockSize;
 	typedef std::array<std::uint8_t, block_size> block_t;
 
 	template <size_t Size>

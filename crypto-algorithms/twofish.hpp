@@ -10,12 +10,12 @@ namespace symmetric{
 template <size_t Size>
 class Twofish : public BlockCipher<16>{
 public:
-	static const int rounds = 16;
-	static const size_t bits_per_block = 128;
-	static const size_t output_whiten = bits_per_block / 32;
-	static const size_t round_subkeys = output_whiten + bits_per_block / 32;
-	static const size_t subkeys_size = round_subkeys + 2 * rounds;
-	static const size_t block_size = bits_per_block / 8;
+	static inline const int rounds = 16;
+	static inline const size_t bits_per_block = 128;
+	static inline const size_t output_whiten = bits_per_block / 32;
+	static inline const size_t round_subkeys = output_whiten + bits_per_block / 32;
+	static inline const size_t subkeys_size = round_subkeys + 2 * rounds;
+	static inline const size_t block_size = bits_per_block / 8;
 	typedef std::array<std::uint8_t, block_size> block_t;
 	static_assert(Size == 128 || Size == 192 || Size == 256, "Key size must be 128, 192, or 256!");
 	typedef Key<Size> key_t;

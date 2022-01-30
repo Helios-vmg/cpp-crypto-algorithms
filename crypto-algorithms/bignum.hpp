@@ -14,12 +14,12 @@ class SignedBigNum;
 template <size_t MinimumBits, typename number_t = uintptr_t>
 class BigNum{
 public:
-	static const size_t bits_per_byte = CHAR_BIT;
-	static const size_t bits_per_number = sizeof(number_t) * bits_per_byte;
-	static const size_t numbers = (MinimumBits + bits_per_number - 1) / bits_per_number;
-	static const size_t bytes = numbers * sizeof(number_t);
-	static const size_t bits = bits_per_number * numbers;
-	static const number_t max = std::numeric_limits<number_t>::max();
+	static inline const size_t bits_per_byte = CHAR_BIT;
+	static inline const size_t bits_per_number = sizeof(number_t) * bits_per_byte;
+	static inline const size_t numbers = (MinimumBits + bits_per_number - 1) / bits_per_number;
+	static inline const size_t bytes = numbers * sizeof(number_t);
+	static inline const size_t bits = bits_per_number * numbers;
+	static inline const number_t max = std::numeric_limits<number_t>::max();
 private:
 	template <size_t N, typename T>
 	friend class BigNum;
