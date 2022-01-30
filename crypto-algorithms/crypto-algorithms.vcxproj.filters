@@ -69,9 +69,6 @@
     <ClInclude Include="hex.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="test_block.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="stream.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -81,13 +78,16 @@
     <ClInclude Include="ringbuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="test_stream.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="rng.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="test_rng.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="test_stream.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="test_block.hpp">
       <Filter>tests</Filter>
     </ClInclude>
   </ItemGroup>

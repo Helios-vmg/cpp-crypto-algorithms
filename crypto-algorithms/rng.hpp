@@ -44,7 +44,7 @@ public:
 		std::fill(this->state, this->state + state_size, 0);
 		size_t i = 0;
 		for (auto s : initial_state){
-			this->state[i / sizeof(T)] |= s << (i % sizeof(T) * 8);
+			this->state[i / sizeof(T)] |= (T)s << (i % sizeof(T) * 8);
 			i++;
 		}
 	}
