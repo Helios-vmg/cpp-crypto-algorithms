@@ -137,9 +137,6 @@
     <ClCompile Include="source_sink.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="test_stream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

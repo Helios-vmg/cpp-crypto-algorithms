@@ -184,7 +184,6 @@
     <ClCompile Include="md5.cpp" />
     <ClCompile Include="sha256.cpp" />
     <ClCompile Include="source_sink.cpp" />
-    <ClCompile Include="stream.cpp" />
     <ClCompile Include="test_aes.cpp" />
     <ClCompile Include="test_bignum.cpp" />
     <ClCompile Include="test_md5.cpp" />
