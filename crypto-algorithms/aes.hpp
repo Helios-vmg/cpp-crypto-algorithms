@@ -25,7 +25,7 @@ public:
 	AesKey(AesKey &&) = default;
 	AesKey &operator=(const AesKey &) = default;
 	AesKey &operator=(AesKey &&) = default;
-	const auto data() const{
+	const auto &data() const{
 		return this->key;
 	}
 };
@@ -76,7 +76,7 @@ public:
 	AesKeySchedule(AesKeySchedule &&) = default;
 	AesKeySchedule &operator=(const AesKeySchedule &) = default;
 	AesKeySchedule &operator=(AesKeySchedule &&) = default;
-	const auto data() const{
+	const auto &data() const{
 		return this->schedule;
 	}
 };
@@ -99,6 +99,9 @@ template <size_t Size>
 class Aes{
 	detail::AesKeySchedule<Size> key;
 public:
+	static const size_t block_size = 16;
+	typedef std::array<std::uint8_t, block_size> block_t;
+	
 	Aes(const AesKey<Size> &key): key(key){}
 	Aes(const Aes &) = default;
 	Aes(Aes &&) = default;

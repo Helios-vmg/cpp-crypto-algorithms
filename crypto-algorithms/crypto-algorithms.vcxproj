@@ -154,7 +154,9 @@
     <ClInclude Include="test_md5.hpp" />
     <ClInclude Include="test_secp256k1.hpp" />
     <ClInclude Include="test_sha256.hpp" />
+    <ClInclude Include="test_twofish.hpp" />
     <ClInclude Include="test_utility.hpp" />
+    <ClInclude Include="twofish.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="aes.cpp" />
@@ -173,7 +175,9 @@
     <ClCompile Include="test_md5.cpp" />
     <ClCompile Include="test_secp256k1.cpp" />
     <ClCompile Include="test_sha256.cpp" />
+    <ClCompile Include="test_twofish.cpp" />
     <ClCompile Include="test_utility.cpp" />
+    <ClCompile Include="twofish.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
