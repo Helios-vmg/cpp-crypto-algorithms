@@ -1,7 +1,7 @@
-#include "ECDSA.hpp"
+#include "ecdsa.hpp"
 #include "sha256.hpp"
 
-namespace ECDSA{
+namespace asymmetric::ECDSA{
 
 Nonce::~Nonce(){}
 

@@ -30,10 +30,10 @@
     <ClInclude Include="sha256.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ECDSA.hpp">
+    <ClInclude Include="ecdsa.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EllipticCurve.hpp">
+    <ClInclude Include="elliptic.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hash.hpp">
@@ -90,6 +90,9 @@
     <ClInclude Include="test_block.hpp">
       <Filter>tests</Filter>
     </ClInclude>
+    <ClInclude Include="rsa.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -101,7 +104,7 @@
     <ClCompile Include="md5.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ECDSA.cpp">
+    <ClCompile Include="ecdsa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sha256.cpp">

@@ -1,7 +1,7 @@
 #include "test_secp256k1.hpp"
 #include "test_utility.hpp"
 #include "sha256.hpp"
-#include "ECDSA.hpp"
+#include "ecdsa.hpp"
 #include "hex.hpp"
 #include <iostream>
 #include <chrono>
@@ -12,7 +12,8 @@ std::unique_ptr<DstT> static_pointer_cast(std::unique_ptr<SrcT> &&p){
 }
 
 static void test_secp256k1(const char *digest_string, const char *private_key_string, const char *public_key_string, const char *nonce_string, const char *r_string, const char *s_string){
-	using namespace ECDSA::Secp256k1;
+	using namespace asymmetric::ECDSA::Secp256k1;
+	using asymmetric::ECDSA::MessageVerificationResult;
 	
 	auto digest = utility::hex_string_to_buffer<32>(digest_string);
 	std::reverse(digest.begin(), digest.end());
@@ -28,7 +29,7 @@ static void test_secp256k1(const char *digest_string, const char *private_key_st
 		throw std::runtime_error("Secp256k1 failed signature test");
 	std::cout << "Signature time: " << (t1 - t0).count() * 1e-6 << " ms\n";
 	auto t2 = std::chrono::high_resolution_clock::now();
-	if (signature->verify_digest(digest.data(), digest.size(), *public_key) != ECDSA::MessageVerificationResult::MessageVerified)
+	if (signature->verify_digest(digest.data(), digest.size(), *public_key) != MessageVerificationResult::MessageVerified)
 		throw std::runtime_error("Secp256k1 failed signature verification test");
 	auto t3 = std::chrono::high_resolution_clock::now();
 	std::cout << "Verification time: " << (t3 - t2).count() * 1e-6 << " ms\n";

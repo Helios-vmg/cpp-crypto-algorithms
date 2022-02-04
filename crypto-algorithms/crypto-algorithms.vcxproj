@@ -153,13 +153,14 @@
     <ClInclude Include="aes.hpp" />
     <ClInclude Include="bignum.hpp" />
     <ClInclude Include="block.hpp" />
-    <ClInclude Include="ECDSA.hpp" />
-    <ClInclude Include="EllipticCurve.hpp" />
+    <ClInclude Include="ecdsa.hpp" />
+    <ClInclude Include="elliptic.hpp" />
     <ClInclude Include="hash.hpp" />
     <ClInclude Include="hex.hpp" />
     <ClInclude Include="md5.hpp" />
     <ClInclude Include="ringbuffer.hpp" />
     <ClInclude Include="rng.hpp" />
+    <ClInclude Include="rsa.hpp" />
     <ClInclude Include="sha256.hpp" />
     <ClInclude Include="source_sink.hpp" />
     <ClInclude Include="stream.hpp" />
@@ -177,7 +178,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="aes.cpp" />
-    <ClCompile Include="ECDSA.cpp">
+    <ClCompile Include="ecdsa.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>

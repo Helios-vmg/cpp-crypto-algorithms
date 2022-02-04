@@ -2,7 +2,7 @@
 
 #include "bignum.hpp"
 
-namespace EllipticCurve{
+namespace asymmetric::EllipticCurve{
 
 template <size_t Bits>
 class Parameters{

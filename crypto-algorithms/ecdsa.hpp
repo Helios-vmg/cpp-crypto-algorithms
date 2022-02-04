@@ -1,10 +1,10 @@
 #pragma once
 
 #include "bignum.hpp"
-#include "EllipticCurve.hpp"
+#include "elliptic.hpp"
 #include <memory>
 
-namespace ECDSA{
+namespace asymmetric::ECDSA{
 
 enum class MessageVerificationResult{
 	MessageVerified,
