@@ -8,39 +8,39 @@
 
 namespace symmetric{
 
+template <size_t Size>
+class Key{
+public:
+	static const size_t bits = Size;
+	static const size_t size = bits / 8;
+private:
+	std::array<std::uint8_t, size> key;
+public:
+	Key(){
+		memset(this->key.data(), 0, size);
+	}
+	Key(const std::array<std::uint8_t, size> &src): key(src){}
+	Key(const void *src){
+		memcpy(this->key.data(), src, size);
+	}
+	Key(const char *s){
+		this->key = utility::hex_string_to_buffer<size>(s);
+	}
+	Key(const Key &) = default;
+	Key(Key &&) = default;
+	Key &operator=(const Key &) = default;
+	Key &operator=(Key &&) = default;
+	const auto &data() const{
+		return this->key;
+	}
+};
+
 template <size_t TBlockSize>
 class BlockCipher{
 public:
 	static inline const size_t block_size = TBlockSize;
 	typedef std::array<std::uint8_t, block_size> block_t;
 
-	template <size_t Size>
-	class Key{
-	public:
-		static const size_t bits = Size;
-		static const size_t size = bits / 8;
-	private:
-		std::array<std::uint8_t, size> key;
-	public:
-		Key(){
-			memset(this->key.data(), 0, size);
-		}
-		Key(const std::array<std::uint8_t, size> &src): key(src){}
-		Key(const void *src){
-			memcpy(this->key.data(), src, size);
-		}
-		Key(const char *s){
-			this->key = utility::hex_string_to_buffer<size>(s);
-		}
-		Key(const Key &) = default;
-		Key(Key &&) = default;
-		Key &operator=(const Key &) = default;
-		Key &operator=(Key &&) = default;
-		const auto &data() const{
-			return this->key;
-		}
-	};
-	
 	virtual ~BlockCipher(){}
 	virtual void encrypt_block(void *void_dst, const void *void_src) const noexcept = 0;
 	virtual void decrypt_block(void *void_dst, const void *void_src) const noexcept = 0;

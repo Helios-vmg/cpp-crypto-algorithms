@@ -321,18 +321,16 @@ void invert_mix_column(std::uint8_t *state) noexcept{
 	state[3] = a[3] ^ b[4] ^ c[2] ^ d[5];
 }
 
+template <size_t BlockSize>
 void mix_columns(std::uint8_t *state) noexcept{
-	mix_column(state + 4 * 0);
-	mix_column(state + 4 * 1);
-	mix_column(state + 4 * 2);
-	mix_column(state + 4 * 3);
+	for (size_t i = 0; i < BlockSize / 32 * 4; i += 4)
+		mix_column(state + i);
 }
 
+template <size_t BlockSize>
 void invert_mix_columns(std::uint8_t *state) noexcept{
-	invert_mix_column(state + 4 * 0);
-	invert_mix_column(state + 4 * 1);
-	invert_mix_column(state + 4 * 2);
-	invert_mix_column(state + 4 * 3);
+	for (size_t i = 0; i < BlockSize / 32 * 4; i += 4)
+		invert_mix_column(state + i);
 }
 
 #define SHIFT(x, i0, i1, i2, i3) {\
@@ -343,62 +341,140 @@ void invert_mix_columns(std::uint8_t *state) noexcept{
 	x[i3] = temp; \
 }
 
-void shift_rows(std::uint8_t *state) noexcept{
+template <size_t N>
+void shift_left(std::uint8_t *state, size_t row, size_t amount){
+	std::uint8_t temp_row[N];
+	state += row;
+	for (size_t i = 0; i < N; i++)
+		temp_row[i] = state[(i + amount) % N * 4];
+	for (size_t i = 0; i < N; i++)
+		state[i * 4] = temp_row[i];
+}
+
+template <size_t BlockSize>
+struct shift_rows_impl{
+	static const auto n = BlockSize / 32;
 	//Shift left by 1
-	SHIFT(state, 1, 5, 9, 13);
+	static void shift_row1(std::uint8_t *state){
+		shift_left<n>(state, 1, 1);
+	}
 	//Shift left by 2
-	auto t2 = state[2];
-	state[2] = state[10];
-	state[10] = t2;
-	auto t3 = state[6];
-	state[6] = state[14];
-	state[14] = t3;
+	static void shift_row2(std::uint8_t *state){
+		shift_left<n>(state, 2, 2);
+	}
 	//Shift left by 3 (or right by 1)
-	//SHIFT(state, 3, 15, 11, 7);
-	SHIFT(state, 15, 11, 7, 3);
-}
-
-void invert_shift_rows(std::uint8_t *state) noexcept{
+	static void shift_row3(std::uint8_t *state){
+		shift_left<n>(state, 3, 3);
+	}
 	//Shift right by 1
-	SHIFT(state, 13, 9, 5, 1);
+	static void inverse_shift_row1(std::uint8_t *state){
+		const auto n = BlockSize / 32;
+		shift_left<n>(state, 1, n - 1);
+	}
 	//Shift right by 2
-	auto t2 = state[2];
-	state[2] = state[10];
-	state[10] = t2;
-	auto t3 = state[6];
-	state[6] = state[14];
-	state[14] = t3;
+	static void inverse_shift_row2(std::uint8_t *state){
+		shift_left<n>(state, 2, n - 2);
+	}
 	//Shift right by 3 (or left by 1)
-	SHIFT(state, 3, 7, 11, 15);
+	static void inverse_shift_row3(std::uint8_t *state){
+		shift_left<n>(state, 3, n - 3);
+	}
+};
+
+#if 1
+template <>
+struct shift_rows_impl<128>{
+	//Shift left by 1
+	static void shift_row1(std::uint8_t *state){
+		SHIFT(state, 1, 5, 9, 13);
+	}
+	//Shift left by 2
+	static void shift_row2(std::uint8_t *state){
+		auto t2 = state[2];
+		auto t3 = state[6];
+		state[2] = state[10];
+		state[6] = state[14];
+		state[10] = t2;
+		state[14] = t3;
+	}
+	//Shift left by 3 (or right by 1)
+	static void shift_row3(std::uint8_t *state){
+		SHIFT(state, 15, 11, 7, 3);
+	}
+	//Shift right by 1
+	static void inverse_shift_row1(std::uint8_t *state){
+		SHIFT(state, 13, 9, 5, 1);
+	}
+	//Shift right by 2
+	static void inverse_shift_row2(std::uint8_t *state){
+		return shift_row2(state);
+	}
+	//Shift right by 3 (or left by 1)
+	static void inverse_shift_row3(std::uint8_t *state){
+		SHIFT(state, 3, 7, 11, 15);
+	}
+};
+#endif
+
+template <>
+struct shift_rows_impl<256>{
+	static const auto n = 256 / 32;
+	//Shift left by 1
+	static void shift_row1(std::uint8_t *state){
+		shift_left<n>(state, 1, 1);
+	}
+	//Shift left by 2
+	static void shift_row2(std::uint8_t *state){
+		shift_left<n>(state, 2, 3);
+	}
+	//Shift left by 3 (or right by 1)
+	static void shift_row3(std::uint8_t *state){
+		shift_left<n>(state, 3, 4);
+	}
+	//Shift right by 1
+	static void inverse_shift_row1(std::uint8_t *state){
+		shift_left<n>(state, 1, n - 1);
+	}
+	//Shift right by 2
+	static void inverse_shift_row2(std::uint8_t *state){
+		shift_left<n>(state, 2, n - 3);
+	}
+	//Shift right by 3 (or left by 1)
+	static void inverse_shift_row3(std::uint8_t *state){
+		shift_left<n>(state, 3, n - 4);
+	}
+};
+
+template <size_t BlockSize>
+void shift_rows(std::uint8_t *state) noexcept{
+	shift_rows_impl<BlockSize>::shift_row1(state);
+	shift_rows_impl<BlockSize>::shift_row2(state);
+	shift_rows_impl<BlockSize>::shift_row3(state);
 }
 
+template <size_t BlockSize>
+void invert_shift_rows(std::uint8_t *state) noexcept{
+	shift_rows_impl<BlockSize>::inverse_shift_row1(state);
+	shift_rows_impl<BlockSize>::inverse_shift_row2(state);
+	shift_rows_impl<BlockSize>::inverse_shift_row3(state);
+}
+
+template <size_t BlockSize>
 void sub_bytes(std::uint8_t *state) noexcept{
-	for (int i = 0; i != 16; i++)
+	for (int i = 0; i != BlockSize / 8; i++)
 		state[i] = sbox[state[i]];
 }
 
+template <size_t BlockSize>
 void invert_sub_bytes(std::uint8_t *state) noexcept{
-	for (int i = 0; i != 16; i++)
+	for (int i = 0; i != BlockSize / 8; i++)
 		state[i] = inverted_sbox[state[i]];
 }
 
+template <size_t BlockSize>
 void add_round_key(std::uint8_t *state, const uint8_t *w) noexcept{
-	state[0x0] ^= w[0x0];
-	state[0x1] ^= w[0x1];
-	state[0x2] ^= w[0x2];
-	state[0x3] ^= w[0x3];
-	state[0x4] ^= w[0x4];
-	state[0x5] ^= w[0x5];
-	state[0x6] ^= w[0x6];
-	state[0x7] ^= w[0x7];
-	state[0x8] ^= w[0x8];
-	state[0x9] ^= w[0x9];
-	state[0xA] ^= w[0xA];
-	state[0xB] ^= w[0xB];
-	state[0xC] ^= w[0xC];
-	state[0xD] ^= w[0xD];
-	state[0xE] ^= w[0xE];
-	state[0xF] ^= w[0xF];
+	for (size_t i = 0; i < BlockSize / 8; i++)
+		state[i] ^= w[i];
 }
 
 std::uint32_t rotate32(std::uint32_t x){
@@ -418,111 +494,97 @@ std::uint32_t subword(uint32_t word){
 
 }
 
-template <size_t Size>
-Aes<Size>::KeySchedule::KeySchedule(const key_t &key){
+template <size_t KeySize, size_t BlockSize>
+Rijndael<KeySize, BlockSize>::KeySchedule::KeySchedule(const key_t &key){
 	static const std::uint32_t rcon[] = {
 		0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
 		0x20000000, 0x40000000, 0x80000000, 0x1b000000, 0x36000000,
 		0x6c000000, 0xd8000000, 0xab000000, 0x4d000000, 0x9a000000,
 	};
-	constexpr int n = key_t::size;
+	constexpr size_t n = key_t::size;
+	constexpr size_t n2 = n / 4;
 	memcpy(this->schedule, key.data().data(), n);
 
-	for (int i = n / 4; i < size; i++){
+	for (size_t i = n2; i < schedule_size / 4; i++){
+		auto ls = this->schedule + (i - 1) * 4;
 		std::uint32_t temp;
-		temp = (std::uint32_t)this->schedule[(i - 1) * 4 + 0] << 24;
-		temp |= (std::uint32_t)this->schedule[(i - 1) * 4 + 1] << 16;
-		temp |= (std::uint32_t)this->schedule[(i - 1) * 4 + 2] << 8;
-		temp |= (std::uint32_t)this->schedule[(i - 1) * 4 + 3];
-		if (i % (n / 4) == 0)
-			temp = subword(rotate32(temp)) ^ rcon[(i - 1) / (n / 4)];
-		else if (n > 24 && i % (n / 4) == 4)
+		temp  = (std::uint32_t)ls[0] << 24;
+		temp |= (std::uint32_t)ls[1] << 16;
+		temp |= (std::uint32_t)ls[2] << 8;
+		temp |= (std::uint32_t)ls[3];
+
+		if (i % n2 == 0){
+			auto index = (i - 1) / n2;
+			const auto rcon_size = sizeof(rcon) / sizeof(*rcon);
+			if (index >= rcon_size)
+				throw std::exception();
+			temp = subword(rotate32(temp)) ^ rcon[index];
+		}else if (n > 24 && i % n2 == 4)
 			temp = subword(temp);
-		this->schedule[i * 4 + 0] = this->schedule[i * 4 + 0 - n] ^ ((temp >> 24) & 0xFF);
-		this->schedule[i * 4 + 1] = this->schedule[i * 4 + 1 - n] ^ ((temp >> 16) & 0xFF);
-		this->schedule[i * 4 + 2] = this->schedule[i * 4 + 2 - n] ^ ((temp >> 8) & 0xFF);
-		this->schedule[i * 4 + 3] = this->schedule[i * 4 + 3 - n] ^ (temp & 0xFF);
+
+		auto s = this->schedule + i * 4;
+		s[0] = s[0 - n] ^ ((temp >> 24) & 0xFF);
+		s[1] = s[1 - n] ^ ((temp >> 16) & 0xFF);
+		s[2] = s[2 - n] ^ ((temp >> 8) & 0xFF);
+		s[3] = s[3 - n] ^ (temp & 0xFF);
 	}
 }
 
-template <size_t Size>
-void Aes<Size>::encrypt_block(void *void_dst, const void *void_src) const noexcept{
+template <size_t KeySize, size_t BlockSize>
+void Rijndael<KeySize, BlockSize>::encrypt_block(void *void_dst, const void *void_src) const noexcept{
 	auto src = (const std::uint8_t *)void_src;
 	auto dst = (std::uint8_t *)void_dst;
-	if (dst != src){
-		dst[0x0] = src[0x0];
-		dst[0x1] = src[0x1];
-		dst[0x2] = src[0x2];
-		dst[0x3] = src[0x3];
-		dst[0x4] = src[0x4];
-		dst[0x5] = src[0x5];
-		dst[0x6] = src[0x6];
-		dst[0x7] = src[0x7];
-		dst[0x8] = src[0x8];
-		dst[0x9] = src[0x9];
-		dst[0xA] = src[0xA];
-		dst[0xB] = src[0xB];
-		dst[0xC] = src[0xC];
-		dst[0xD] = src[0xD];
-		dst[0xE] = src[0xE];
-		dst[0xF] = src[0xF];
-	}
+	if (dst != src)
+		std::copy(src, src + BlockSize / 8, dst);
 
 	auto key = this->key.data();
 
-	add_round_key(dst, key);
+	add_round_key<BlockSize>(dst, key);
 	for (auto i = rounds - 2; i--;){
-		key += 16;
-		sub_bytes(dst);
-		shift_rows(dst);
-		mix_columns(dst);
-		add_round_key(dst, key);
+		key += round_size;
+		sub_bytes<BlockSize>(dst);
+		shift_rows<BlockSize>(dst);
+		mix_columns<BlockSize>(dst);
+		add_round_key<BlockSize>(dst, key);
 	}
-	sub_bytes(dst);
-	shift_rows(dst);
-	add_round_key(dst, key + 16);
+	key += round_size;
+	sub_bytes<BlockSize>(dst);
+	shift_rows<BlockSize>(dst);
+	add_round_key<BlockSize>(dst, key);
 }
 
-template <size_t Size>
-void Aes<Size>::decrypt_block(void *void_dst, const void *void_src) const noexcept{
+template <size_t Size, size_t BlockSize>
+void Rijndael<Size, BlockSize>::decrypt_block(void *void_dst, const void *void_src) const noexcept{
 	auto src = (const std::uint8_t *)void_src;
 	auto dst = (std::uint8_t *)void_dst;
-	if (dst != src){
-		dst[0x0] = src[0x0];
-		dst[0x1] = src[0x1];
-		dst[0x2] = src[0x2];
-		dst[0x3] = src[0x3];
-		dst[0x4] = src[0x4];
-		dst[0x5] = src[0x5];
-		dst[0x6] = src[0x6];
-		dst[0x7] = src[0x7];
-		dst[0x8] = src[0x8];
-		dst[0x9] = src[0x9];
-		dst[0xA] = src[0xA];
-		dst[0xB] = src[0xB];
-		dst[0xC] = src[0xC];
-		dst[0xD] = src[0xD];
-		dst[0xE] = src[0xE];
-		dst[0xF] = src[0xF];
-	}
+	if (dst != src)
+		std::copy(src, src + BlockSize / 8, dst);
 
-	auto key = this->key.data() + (rounds - 1) * 16;
+	auto key = this->key.data() + (rounds - 1) * round_size;
 
-	add_round_key(dst, key);
+	add_round_key<BlockSize>(dst, key);
+	invert_shift_rows<BlockSize>(dst);
+	invert_sub_bytes<BlockSize>(dst);
+	key -= round_size;
 	for (auto i = rounds - 2; i--;){
-		key -= 16;
-		invert_shift_rows(dst);
-		invert_sub_bytes(dst);
-		add_round_key(dst, key);
-		invert_mix_columns(dst);
+		add_round_key<BlockSize>(dst, key);
+		invert_mix_columns<BlockSize>(dst);
+		invert_shift_rows<BlockSize>(dst);
+		invert_sub_bytes<BlockSize>(dst);
+		key -= round_size;
 	}
-	invert_shift_rows(dst);
-	invert_sub_bytes(dst);
-	add_round_key(dst, key - 16);
+	add_round_key<BlockSize>(dst, key);
 }
 
-template class Aes<128>;
-template class Aes<192>;
-template class Aes<256>;
+#define DEFINE_RIJNDAEL_BLOCK_IMPL(n)  \
+	template class Rijndael<128, n>; \
+	template class Rijndael<192, n>; \
+	template class Rijndael<256, n>
+
+DEFINE_RIJNDAEL_BLOCK_IMPL(32 * 4);
+DEFINE_RIJNDAEL_BLOCK_IMPL(32 * 5);
+DEFINE_RIJNDAEL_BLOCK_IMPL(32 * 6);
+DEFINE_RIJNDAEL_BLOCK_IMPL(32 * 7);
+DEFINE_RIJNDAEL_BLOCK_IMPL(32 * 8);
 
 }
