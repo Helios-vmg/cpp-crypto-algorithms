@@ -6,6 +6,7 @@
 #include "test_bignum.hpp"
 #include "test_stream.hpp"
 #include "test_rng.hpp"
+#include "test_base64.hpp"
 #include <iostream>
 #include <exception>
 
@@ -19,6 +20,7 @@ int main(){
 		test_stream();
 		test_rng();
 		test_secp256k1();
+		test_base64();
 	}catch (std::exception &e){
 		std::cerr << e.what() << std::endl;
 		return -1;

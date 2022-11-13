@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <cstdint>
+#include <optional>
 
 namespace utility{
 
@@ -12,6 +13,11 @@ class DataSource{
 public:
 	virtual ~DataSource(){}
 	virtual size_t read(void *, size_t) = 0;
+	//Returns the number of bytes that are available for reading.
+	//Returns the null value if the number cannot be determined in advance.
+	virtual std::optional<size_t> available() const{
+		return {};
+	}
 	virtual DataSource &operator>>(DataSink &);
 };
 

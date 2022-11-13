@@ -53,7 +53,7 @@ public:
 			this->process_all();
 			auto written = this->input_buffer.write(src, size);
 			if (!written)
-				break;;
+				break;
 			src += written;
 			size -= written;
 			ret += written;
@@ -75,6 +75,9 @@ public:
 		}
 		this->process_all();
 		return ret;
+	}
+	std::optional<size_t> available() const override{
+		return this->output_buffer.get_length();
 	}
 	virtual void terminate(){}
 };

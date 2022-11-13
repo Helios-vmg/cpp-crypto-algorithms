@@ -93,6 +93,12 @@
     <ClInclude Include="rsa.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="base64.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test_base64.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -140,10 +146,16 @@
     <ClCompile Include="source_sink.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="test_stream.cpp">
+    <ClCompile Include="test_rng.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="base64.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="test_rng.cpp">
+    <ClCompile Include="test_base64.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="test_stream.cpp">
       <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>

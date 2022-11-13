@@ -151,6 +151,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="aes.hpp" />
+    <ClInclude Include="base64.hpp" />
     <ClInclude Include="bignum.hpp" />
     <ClInclude Include="block.hpp" />
     <ClInclude Include="ecdsa.hpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="source_sink.hpp" />
     <ClInclude Include="stream.hpp" />
     <ClInclude Include="test_aes.hpp" />
+    <ClInclude Include="test_base64.hpp" />
     <ClInclude Include="test_bignum.hpp" />
     <ClInclude Include="test_block.hpp" />
     <ClInclude Include="test_md5.hpp" />
@@ -178,6 +180,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="aes.cpp" />
+    <ClCompile Include="base64.cpp" />
     <ClCompile Include="ecdsa.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
@@ -190,6 +193,7 @@
     <ClCompile Include="sha256.cpp" />
     <ClCompile Include="source_sink.cpp" />
     <ClCompile Include="test_aes.cpp" />
+    <ClCompile Include="test_base64.cpp" />
     <ClCompile Include="test_bignum.cpp" />
     <ClCompile Include="test_md5.cpp" />
     <ClCompile Include="test_rng.cpp" />
