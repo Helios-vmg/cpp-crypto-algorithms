@@ -7,34 +7,49 @@ namespace asymmetric::EllipticCurve{
 template <size_t Bits>
 class Parameters{
 	typedef arithmetic::fixed::SignedBigNum<Bits> T;
-	T p, a, b;
+	T p, a, b, c, d;
 public:
 	Parameters() = default;
-	Parameters(const T &p, const T &a, const T &b): p(p), a(a), b(b){}
+	Parameters(const T &p, const T &a, const T &b, const T &c, const T &d): p(p), a(a), b(b), c(c), d(d){}
 	Parameters(const Parameters &) = default;
 	Parameters(Parameters &&) = default;
 	Parameters &operator=(const Parameters &) = default;
 	Parameters &operator=(Parameters &&) = default;
 	bool operator==(const Parameters &other) const{
-		return this->p == other.p && this->a == other.a && this->b == other.b;
+		return this->p == other.p && this->a == other.a && this->b == other.b && this->c == other.c && this->d == other.d;
 	}
 	bool operator!=(const Parameters &other) const{
 		return !(*this == other);
 	}
 	bool is_solution(const T &x, const T &y) const{
 		auto l = y.mod_pow(2, p);
-		auto r = (x * x * x + a * x + b) % p;
+		auto r = this->evaluate_x(x);
 		return l == r;
 	}
 	T evaluate_x(const T &x) const{
-		return (((x * x + a) * x + b) % p).template cast<Bits>();
+		auto ret = a;
+		ret = ret * x + b;
+		//Parameters<Bits> is instantiated with Bits being four times as large
+		//as the actual values of the parameters, so this modulo could be
+		//safely skipped without causing an overflow.
+		ret %= p;
+		ret = ret * x + c;
+		ret %= p;
+		ret = ret * x + d;
+		ret %= p;
+		return ret;
 	}
 	bool get_slope(T &dst, const T &x, const T &y) const{
 		if (!this->is_solution(x, y))
 			return false;
 		if (!y)
 			return false;
-		auto dividend = (x.mod_pow(2, p) * 3 + a) % p;
+
+		auto dividend = a * 3;
+		dividend = dividend * x + b;
+		dividend %= p;
+		dividend = dividend * x + c;
+		dividend %= p;
 		auto divisor = extended_euclidean(y.template cast<Bits / 3>() * 2, p.template cast<Bits / 3>()).template cast<Bits>();
 
 		dst = ((dividend * divisor) % p);
@@ -48,7 +63,13 @@ public:
 	}
 	template <size_t N>
 	Parameters<N> cast() const{
-		return Parameters<N>(this->p.template cast<N>(), this->a.template cast<N>(), this->b.template cast<N>());
+		return Parameters<N>(
+			this->p.template cast<N>(),
+			this->a.template cast<N>(),
+			this->b.template cast<N>(),
+			this->c.template cast<N>(),
+			this->d.template cast<N>()
+		);
 	}
 };
 
@@ -130,7 +151,7 @@ public:
 				this->y = first_solution;
 			else
 				this->y = second_solution;
-		} else{
+		}else{
 			i = count_hex_string_characters(compressed);
 			this->x = T::from_hex_string(compressed, i);
 			compressed += i;

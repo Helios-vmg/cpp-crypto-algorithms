@@ -12,7 +12,13 @@ PublicKey::~PublicKey(){}
 
 namespace Secp256k1{
 
-extern const EllipticCurve::Parameters<1024> params(BigNum<1024>::from_hex_string("FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFC2F"), BigNum<1024>(), BigNum<1024>(7));
+extern const EllipticCurve::Parameters<1024> params(
+	BigNum<1024>::from_hex_string("FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFC2F"), //modulo
+	BigNum<1024>(1), //3rd degree coeff
+	BigNum<1024>(),  //2nd degree coeff
+	BigNum<1024>(),  //1st degree coeff
+	BigNum<1024>(7)  //independent term
+);
 extern const EllipticCurve::Point<1024> param_g("02 79BE667E F9DCBBAC 55A06295 CE870B07 029BFCDB 2DCE28D9 59F2815B 16F81798", params);
 extern const number_t param_n = BigNum<1024>::from_hex_string("FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141");
 
