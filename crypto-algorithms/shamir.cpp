@@ -303,8 +303,8 @@ int count_bits(int n){
 void test_sharing(){
 	csprng::BlockCipherRng<symmetric::Aes<256>> rng;
 	const int share_count = 9;
-	const int threshold = 9;
-	auto shares = share_secret(input, threshold, share_count, rng);
+	const int threshold = 6;
+	auto shares = share_secret(input, share_count, threshold, rng);
 
 	std::vector<std::vector<std::uint8_t>> shares_serialized;
 	shares_serialized.reserve(shares.size());
