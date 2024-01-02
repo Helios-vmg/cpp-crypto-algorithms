@@ -44,8 +44,8 @@ public:
 namespace Secp256k1{
 
 static const size_t number_bits = 1024;
-typedef SignedBigNum<number_bits> number_t;
-typedef BigNum<number_bits> unumber_t;
+typedef arithmetic::fixed::SignedBigNum<number_bits> number_t;
+typedef arithmetic::fixed::BigNum<number_bits> unumber_t;
 
 extern const EllipticCurve::Parameters<1024> params;
 extern const EllipticCurve::Point<1024> param_g;
@@ -68,7 +68,7 @@ public:
 		return this->key.is_solution();
 	}
 	template <size_t N>
-	EllipticCurve::Point<number_bits> operator*(const SignedBigNum<N> &other) const{
+	EllipticCurve::Point<number_bits> operator*(const arithmetic::fixed::SignedBigNum<N> &other) const{
 		return this->key * other;
 	}
 };
@@ -85,10 +85,10 @@ public:
 };
 
 class Signature : public ECDSA::Signature{
-	BigNum<256> r, s;
+	arithmetic::fixed::BigNum<256> r, s;
 	MessageVerificationResult verify_digest(const void *digest, PublicKey &pk) const;
 public:
-	Signature(const BigNum<256> &r, const BigNum<256> &s): r(r), s(s){}
+	Signature(const arithmetic::fixed::BigNum<256> &r, const arithmetic::fixed::BigNum<256> &s): r(r), s(s){}
 	MessageVerificationResult verify_message(const void *message, size_t length, ECDSA::PublicKey &pk) const override;
 	MessageVerificationResult verify_digest(const void *digest, size_t length, ECDSA::PublicKey &pk) const override;
 	bool operator==(const ECDSA::Signature &other) const override{

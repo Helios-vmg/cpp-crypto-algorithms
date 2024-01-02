@@ -6,7 +6,7 @@ namespace asymmetric::EllipticCurve{
 
 template <size_t Bits>
 class Parameters{
-	typedef SignedBigNum<Bits> T;
+	typedef arithmetic::fixed::SignedBigNum<Bits> T;
 	T p, a, b;
 public:
 	Parameters() = default;
@@ -54,7 +54,7 @@ public:
 
 template <size_t Bits>
 class Point{
-	typedef SignedBigNum<Bits> T;
+	typedef arithmetic::fixed::SignedBigNum<Bits> T;
 	T x, y;
 	Parameters<Bits> parameters;
 	bool infinite = false;
@@ -109,6 +109,8 @@ public:
 	}
 	Point(const T &x, const T &y, const Parameters<Bits> &params): x(x), y(y), parameters(params){}
 	Point(const char *compressed, const Parameters<Bits> &params): parameters(params){
+		using arithmetic::fixed::SignedBigNum;
+
 		std::uint8_t first_byte = 0;
 		size_t i = 0;
 		for (; *compressed && i < 2; compressed++){
@@ -203,7 +205,7 @@ public:
 		return Point(this->x, (-this->y).euclidean_modulo(this->parameters.get_p()), this->parameters);
 	}
 	template <size_t N>
-	Point operator*(const BigNum<N> &multiplier) const{
+	Point operator*(const arithmetic::fixed::BigNum<N> &multiplier) const{
 		if (!multiplier)
 			return Point();
 		auto bytes = multiplier.get_buffer();
@@ -221,7 +223,7 @@ public:
 		return ret;
 	}
 	template <size_t N>
-	Point operator*(const SignedBigNum<N> &multiplier) const{
+	Point operator*(const arithmetic::fixed::SignedBigNum<N> &multiplier) const{
 		if (multiplier.negative())
 			return -(*this * multiplier.abs());
 		return *this * multiplier.abs();

@@ -6,6 +6,8 @@
 #include <iostream>
 #include <chrono>
 
+using arithmetic::fixed::BigNum;
+
 template <typename DstT, typename SrcT>
 std::unique_ptr<DstT> static_pointer_cast(std::unique_ptr<SrcT> &&p){
 	return std::unique_ptr<DstT>(static_cast<DstT *>(p.release()));

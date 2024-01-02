@@ -8,6 +8,7 @@ are implemented:
 * A cryptographically secure pseudorandom number generator based on block
   ciphers
 * Secp256k1
+* Shamir's secret sharing
 
 Note that speed was not a priority while implementing the library. The goal was
 to have a library with no dependencies, that was easy to use, and which followed

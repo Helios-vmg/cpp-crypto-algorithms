@@ -1,8 +1,6 @@
 #include "shamir.hpp"
 #include "aes.hpp"
-#include "base64.hpp"
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/cast.hpp>
+#include "bignum.hpp"
 
 std::uint32_t extended_euclidean(std::uint32_t a, std::uint32_t b){
 	std::uint32_t x0 = 1;
@@ -135,23 +133,33 @@ Polynomial Polynomial::lagrange_polynomial(const std::vector<std::pair<FiniteFie
 	return ret;
 }
 
+using arithmetic::arbitrary::BigNum;
+
+size_t u64_to_size(std::uint64_t n){
+	if (n > std::numeric_limits<size_t>::max())
+		throw std::bad_cast();
+	return (size_t)n;
+}
+
+std::uint64_t size_to_u64(size_t n){
+	if (n > std::numeric_limits<std::uint64_t>::max())
+		throw std::bad_cast();
+	return (size_t)n;
+}
+
 std::vector<FiniteField32> fragment_secret(const std::string &secret){
-	typedef boost::multiprecision::cpp_int Z;
+	typedef BigNum Z;
 
-	auto size = boost::numeric_cast<std::uint64_t>(secret.size());
+	auto size = size_to_u64(secret.size());
 
-	Z n;
-	for (auto c : secret){
-		n <<= 8;
-		n |= (std::uint8_t)c;
-	}
+	Z n(secret.data(), secret.size());
 
 	n <<= 64;
-	n |= size;
+	n += size;
 
 	std::vector<FiniteField32> ret;
 	Z P = FiniteField32::P;
-	while (!n.is_zero()){
+	while (!!n){
 		ret.emplace_back((n % P).convert_to<std::uint32_t>());
 		n /= P;
 	}
@@ -160,7 +168,7 @@ std::vector<FiniteField32> fragment_secret(const std::string &secret){
 }
 
 std::string defragment_secret(const std::vector<FiniteField32> &fragments){
-	typedef boost::multiprecision::cpp_int Z;
+	typedef BigNum Z;
 
 	Z n;
 	Z P = FiniteField32::P;
@@ -170,7 +178,7 @@ std::string defragment_secret(const std::vector<FiniteField32> &fragments){
 		n += (Z)(std::uint32_t)*it;
 	}
 
-	auto size = boost::numeric_cast<size_t>((n & 0xFFFFFFFFFFFFFFFFULL).convert_to<std::uint64_t>());
+	auto size = u64_to_size(n.convert_to_wrapping<std::uint64_t>());
 	n >>= 64;
 
 	std::string ret;
@@ -178,10 +186,8 @@ std::string defragment_secret(const std::vector<FiniteField32> &fragments){
 		size = fragments.size() * 4;
 	ret.resize(size);
 
-	for (size_t i = size; i--;){
-		ret[i] = (char)(n & 0xFF).convert_to<std::uint8_t>();
-		n >>= 8;
-	}
+	auto temp = n.to_buffer();
+	std::copy(temp.begin(), temp.begin() + std::min(size, temp.size()), ret.begin());
 
 	return ret;
 }

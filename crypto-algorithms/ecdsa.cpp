@@ -1,6 +1,9 @@
 #include "ecdsa.hpp"
 #include "sha256.hpp"
 
+using arithmetic::fixed::BigNum;
+using arithmetic::fixed::SignedBigNum;
+
 namespace asymmetric::ECDSA{
 
 Nonce::~Nonce(){}

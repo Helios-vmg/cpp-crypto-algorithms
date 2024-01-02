@@ -2,6 +2,8 @@
 #include <iostream>
 #include <exception>
 
+using arithmetic::fixed::BigNum;
+
 template <size_t N>
 void test_addition(const BigNum<N> &a, const BigNum<N> &b, const BigNum<N> &c){
 	if (a + b != c)

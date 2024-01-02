@@ -105,6 +105,12 @@
     <ClInclude Include="test_shamir.hpp">
       <Filter>tests</Filter>
     </ClInclude>
+    <ClInclude Include="fixed.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="arbitrary.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -165,6 +171,9 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="shamir.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="arbitrary.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
