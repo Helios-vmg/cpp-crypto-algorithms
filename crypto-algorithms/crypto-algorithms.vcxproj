@@ -163,6 +163,7 @@
     <ClInclude Include="rng.hpp" />
     <ClInclude Include="rsa.hpp" />
     <ClInclude Include="sha256.hpp" />
+    <ClInclude Include="shamir.hpp" />
     <ClInclude Include="source_sink.hpp" />
     <ClInclude Include="stream.hpp" />
     <ClInclude Include="test_aes.hpp" />
@@ -173,6 +174,7 @@
     <ClInclude Include="test_rng.hpp" />
     <ClInclude Include="test_secp256k1.hpp" />
     <ClInclude Include="test_sha256.hpp" />
+    <ClInclude Include="test_shamir.hpp" />
     <ClInclude Include="test_stream.hpp" />
     <ClInclude Include="test_twofish.hpp" />
     <ClInclude Include="test_utility.hpp" />
@@ -191,6 +193,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="md5.cpp" />
     <ClCompile Include="sha256.cpp" />
+    <ClCompile Include="shamir.cpp" />
     <ClCompile Include="source_sink.cpp" />
     <ClCompile Include="test_aes.cpp" />
     <ClCompile Include="test_base64.cpp" />

@@ -99,6 +99,12 @@
     <ClInclude Include="test_base64.hpp">
       <Filter>tests</Filter>
     </ClInclude>
+    <ClInclude Include="shamir.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test_shamir.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -157,6 +163,9 @@
     </ClCompile>
     <ClCompile Include="test_stream.cpp">
       <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="shamir.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

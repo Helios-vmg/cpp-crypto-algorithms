@@ -44,8 +44,11 @@ public:
 	Base64Encoder(Base64Encoder &&other) = delete;
 	Base64Encoder &operator=(Base64Encoder &&other) = delete;
 	void terminate() override;
-	//convenience function:
+	//convenience functions:
 	static std::string encode(const void *, size_t);
+	static std::string encode(const std::vector<std::uint8_t> &data){
+		return encode(data.data(), data.size());
+	}
 };
 
 class Base64Decoder : public Base64Stream{
