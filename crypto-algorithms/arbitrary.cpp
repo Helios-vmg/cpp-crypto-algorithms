@@ -531,8 +531,8 @@ BigNum BigNum::gcd(BigNum b) const{
 	return a;
 }
 
-std::vector<unsigned char> BigNum::to_buffer() const{
-	std::vector<unsigned char> ret;
+std::vector<std::uint8_t> BigNum::to_buffer() const{
+	std::vector<std::uint8_t> ret;
 	if (!*this){
 		ret.push_back(0);
 	}else{
@@ -601,6 +601,101 @@ std::ostream &operator<<(std::ostream &stream, const BigNum &n){
 
 std::ostream &operator<<(std::ostream &stream, const SignedBigNum &n){
 	return stream << n.to_string();
+}
+
+SignedBigNum SignedBigNum::extended_euclidean(const SignedBigNum &b) const{
+	auto a = *this;
+	SignedBigNum x0(1);
+	SignedBigNum x1;
+	auto b2 = b;
+	while (!!b2){
+		auto [quotient, remainder] = a.div(b2);
+		a = std::move(b2);
+		b2 = std::move(remainder);
+
+		auto temp = std::move(x0);
+		x0 = std::move(x1);
+		x1 = temp - quotient * x0;
+	}
+
+	return x0.euclidean_modulo(b);
+}
+
+BigNum SignedBigNum::euclidean_modulo(const SignedBigNum &other) const{
+	if (this->sign)
+		return ((*this % other + other) % other).bignum;
+	return (*this % other).bignum;
+}
+
+SignedBigNum SignedBigNum::pow(const SignedBigNum &exponent) const{
+	if (exponent.sign)
+		throw std::runtime_error("cannot raise integer to negative power");
+	auto sign = exponent.bignum.odd() && this->sign;
+	SignedBigNum ret = this->bignum.pow(exponent.bignum);
+	ret.sign = exponent.bignum.odd() && this->sign;
+	return ret;
+}
+
+BigNum SignedBigNum::mod_pow(const SignedBigNum &exponent, const SignedBigNum &modulo) const{
+	if (exponent.sign)
+		throw std::runtime_error("cannot raise integer to negative power");
+	SignedBigNum m = modulo.abs();
+	return this->euclidean_modulo(m).mod_pow(exponent.bignum, m.bignum);
+}
+
+SignedBigNum legendre_operation(const SignedBigNum &a, const SignedBigNum &b){
+	return a.mod_pow((b - 1) >> 1, b);
+}
+
+bool tonelli_shanks(SignedBigNum &first_solution, SignedBigNum &second_solution, const SignedBigNum &a, const SignedBigNum &n){
+	if (legendre_operation(a, n) != 1)
+		return false;
+
+	typedef SignedBigNum Z;
+
+	auto n1 = n - 1;
+	auto q = n1;
+	Z s;
+	while (q.even()){
+		q >>= 1;
+		++s;
+	}
+
+	if (s == 1){
+		Z temp = a.mod_pow((n + 1) >> 2, n);
+		first_solution = temp;
+		second_solution = (-temp).euclidean_modulo(n);
+		return true;
+	}
+
+	Z z(2);
+	for (auto n2 = n1 >> 1; (Z)z.mod_pow(n2, n) != n1;)
+		z++;
+
+	Z c = z.mod_pow(q, n);
+	Z r = a.mod_pow((q + 1) >> 1, n);
+	Z t = a.mod_pow(q, n);
+	Z m = s;
+	const Z one(1);
+	while (t % n != 1){
+		Z i;
+		auto m2 = m - 1;
+
+		for (auto z2 = t; z2 != one && i < m2; ++i)
+			z2 = z2 * z2 % n;
+
+		SignedBigNum b = c;
+		for (auto e = m - i - 1; !!e; --e)
+			b = b * b % n;
+
+		r = r * b % n;
+		c = b * b % n;
+		t = t * c % n;
+		m = i;
+	}
+	first_solution = r;
+	second_solution = (n - r) % n;
+	return true;
 }
 
 }

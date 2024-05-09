@@ -6,22 +6,64 @@
 #include <iostream>
 #include <chrono>
 
-using arithmetic::fixed::BigNum;
+using arithmetic::arbitrary::BigNum;
 
 template <typename DstT, typename SrcT>
 std::unique_ptr<DstT> static_pointer_cast(std::unique_ptr<SrcT> &&p){
 	return std::unique_ptr<DstT>(static_cast<DstT *>(p.release()));
 }
 
-static void test_secp256k1(const char *digest_string, const char *private_key_string, const char *public_key_string, const char *nonce_string, const char *r_string, const char *s_string){
+struct test_case{
+	const char *digest_string;
+	const char *private_key_string;
+	const char *public_key_string;
+	const char *nonce_string;
+	const char *r_string;
+	const char *s_string;
+	test_case(
+		const char *a,
+		const char *b,
+		const char *c,
+		const char *d,
+		const char *e,
+		const char *f
+	)
+		: digest_string(a)
+		, private_key_string(b)
+		, public_key_string(c)
+		, nonce_string(d)
+		, r_string(e)
+		, s_string(f)
+	{}
+};
+
+struct test_case2 : public test_case{
+	const char *original_message;
+	test_case2(
+		const char *a,
+		const char *b,
+		const char *c,
+		const char *d,
+		const char *e,
+		const char *f,
+		const char *g
+	): test_case(b, c, d, e, f, g), original_message(a){}
+};
+
+template <typename T>
+static double delta_t(const std::chrono::time_point<T> &a, const std::chrono::time_point<T> &b){
+	return std::chrono::duration_cast<std::chrono::nanoseconds>(a - b).count() * 1e-6;
+}
+
+static void test_secp256k1(const test_case &tc){
 	using namespace asymmetric::ECDSA::Secp256k1;
 	using asymmetric::ECDSA::MessageVerificationResult;
 	
-	auto digest = utility::hex_string_to_buffer<32>(digest_string);
+	auto digest = utility::hex_string_to_buffer<32>(tc.digest_string);
 	std::reverse(digest.begin(), digest.end());
-	PrivateKey private_key(BigNum<1024>::from_hex_string(private_key_string));
-	Nonce nonce(BigNum<1024>::from_hex_string(nonce_string));
-	Signature expected_sig(BigNum<256>::from_hex_string(r_string), BigNum<256>::from_hex_string(s_string));
+	PrivateKey private_key(BigNum::from_hex_string(tc.private_key_string));
+	Nonce nonce(BigNum::from_hex_string(tc.nonce_string));
+	Signature expected_sig(BigNum::from_hex_string(tc.r_string), BigNum::from_hex_string(tc.s_string));
 
 	auto t0 = std::chrono::high_resolution_clock::now();
 	auto signature = static_pointer_cast<Signature>(private_key.sign_digest(digest.data(), digest.size(), nonce));
@@ -29,35 +71,25 @@ static void test_secp256k1(const char *digest_string, const char *private_key_st
 	auto public_key = private_key.get_public_key();
 	if (!signature || *signature != expected_sig)
 		throw std::runtime_error("Secp256k1 failed signature test");
-	std::cout << "Signature time: " << (t1 - t0).count() * 1e-6 << " ms\n";
+	std::cout << "Signature time: " << delta_t(t1, t0) << " ms\n";
 	auto t2 = std::chrono::high_resolution_clock::now();
 	if (signature->verify_digest(digest.data(), digest.size(), *public_key) != MessageVerificationResult::MessageVerified)
 		throw std::runtime_error("Secp256k1 failed signature verification test");
 	auto t3 = std::chrono::high_resolution_clock::now();
-	std::cout << "Verification time: " << (t3 - t2).count() * 1e-6 << " ms\n";
+	std::cout << "Verification time: " << delta_t(t3, t2) << " ms\n";
 }
 
 
-static void test_secp256k1(const char *original_message, const char *digest_string, const char *private_key_string, const char *public_key_string, const char *nonce_string, const char *r_string, const char *s_string){
-	std::string string = hash::algorithm::SHA256::compute(original_message, strlen(original_message));
-	if (string != digest_string)
+static void test_secp256k1(const test_case2 &tc){
+	std::string string = hash::algorithm::SHA256::compute(tc.original_message, strlen(tc.original_message));
+	if (string != tc.digest_string)
 		throw std::runtime_error("Secp256k1 failed hashing test");
-	test_secp256k1(digest_string, private_key_string, public_key_string, nonce_string, r_string, s_string);
+	test_secp256k1(static_cast<const test_case &>(tc));
 }
 
 
 void test_secp256k1(){
-	struct test_case{
-		const char *a;
-		const char *b;
-		const char *c;
-		const char *d;
-		const char *e;
-		const char *f;
-		const char *g;
-	};
-
-	static const test_case test_cases[] = {
+	static const test_case2 test_cases1[] = {
 		{
 			"",
 			"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -94,8 +126,10 @@ void test_secp256k1(){
 			"fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af",
 			"ecf2babaf1c42ea91ec9554c55cd40d5155d61a9983f8b41b59ffe22dd6b9c61",
 		},
+	};
+
+	static const test_case test_cases2[] = {
 		{
-			nullptr,
 			"7d950b680dba26c22f10a4404c9ab47a21d4ef63e2fd26043602c91bedfc373a",
 			"61c322b3efbf1008f2f72ee787d4bbc86d66c91ac75eaf96f74253c7b551305f",
 			"03606d8a0092236d78964afdd88294b5ef6e1ac6deb23a67a72f96c4f53d707638",
@@ -104,7 +138,6 @@ void test_secp256k1(){
 			"6183f775ef0b3e1b6eb4fff587cb6ff818517b2f7717bd801b14505d959e08f4",
 		},
 		{
-			nullptr,
 			"20f894017befa2a2aa6d8b60933540a67f5ed1a75a8957c255025698af79ba12",
 			"c6bbb200062b9e57f92d20e0ad156da02e1e1801a15965ceaf2f4c90dfebb9b",
 			"028610edeef6ac776e178cf1d6b864efb9c8a4ec8228b6c88aeab5437c1f8bd08d",
@@ -113,7 +146,6 @@ void test_secp256k1(){
 			"6ea5645b27149ea1a0e857a93f630ab6f8ca16c5b7060e75e38f476261cc0778",
 		},
 		{
-			nullptr,
 			"13ee15ba27dfa9527df1d09dfb05dd156c87eed127fa9f92368481b5aa3c3124",
 			"a636ce5f7bc51d722e15189607d4bb27a424298807a38b2f3e86c5679ca2a483",
 			"0380ad0adb682f18ff2aff82415a1781a1afc5693d0da3051b9310fc5246a1b673",
@@ -122,7 +154,6 @@ void test_secp256k1(){
 			"33bd64904ee7b2f1a83d2740d76b5d3f8c6b31ea1d2d990951a370bcd0132ced",
 		},
 		{
-			nullptr,
 			"b1b78c212c7f87e4215ee2ece82c2544d0b7a5bc63d56ec3b07089de2ba30d18",
 			"e0dca7845b1321338b7bbfd54e130aff482336b6111331bc112c216f3c0dc5ed",
 			"03ac42ce3f1b90118a312f16b1be7f0fa2e5e853b75aa3e35a59f5d9f98406e96c",
@@ -131,7 +162,6 @@ void test_secp256k1(){
 			"e98a15364daca8518beb7054abae088d964d38a401e51a96448110b7e077824d",
 		},
 		{
-			nullptr,
 			"4fd53b6b31ae067dcb74a65ffa340ddd2491249354afb66bae917dd49cb177b6",
 			"22379d7d94461d0c7bc8afd81592cbe3d7f26bcbc5471e57e0c1377a60bea8b2",
 			"02b3fdc4ed6c2ada9c0c28cea5ca133773aa2069c89b435ec23009d6f76be5e8ee",
@@ -140,7 +170,6 @@ void test_secp256k1(){
 			"2205053d22b26d0ec893d6a72547b431d640a03c895181ae57eb2d33a1a62520",
 		},
 		{
-			nullptr,
 			"7f95201ab52ec3b71513f9337587a8245e3a89f5f3a53d59a4cb59a7479656b9",
 			"cc87a54d38b16e57fb04e823a607d101ea8953417a7b09b9449074e30562a051",
 			"028be8331bc5c61f2304fae6ebf97d0aa680fd68b2e1ba121347233905689c34a1",
@@ -150,12 +179,10 @@ void test_secp256k1(){
 		},
 	};
 
-	for (auto &t : test_cases){
-		if (t.a)
-			test_secp256k1(t.a, t.b, t.c, t.d, t.e, t.f, t.g);
-		else
-			test_secp256k1(t.b, t.c, t.d, t.e, t.f, t.g);
-	}
+	for (auto &t : test_cases1)
+		test_secp256k1(t);
+	for (auto &t : test_cases2)
+		test_secp256k1(t);
 
 	std::cout << "Secp256k1 implementation passed the test!\n";
 }

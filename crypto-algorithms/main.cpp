@@ -13,7 +13,8 @@
 
 int main(){
 	try{
-		test_bignum();
+		test_fixed_bignum();
+		test_arbitrary_bignum();
 		test_md5();
 		test_sha256();
 		test_aes();

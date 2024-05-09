@@ -105,6 +105,28 @@ public:
 	template <typename T2>
 	BigNum(const std::vector<T2> &buffer, typename std::enable_if<std::is_integral<T2>::value && sizeof(T2) == 1>::type * = nullptr)
 		: BigNum(buffer.size() ? &buffer[0] : nullptr, buffer.size()){}
+
+	static BigNum from_hex_string(const char *string, size_t n = 0){
+		if (!n)
+			n = strlen(string);
+		BigNum ret;
+		for (size_t i = 0; i < n; i++){
+			T digit = 0;
+			auto c = string[i];
+			if (c >= '0' && c <= '9')
+				digit = c - '0';
+			else if (c >= 'A' && c <= 'F')
+				digit = c - 'A' + 10;
+			else if (c >= 'a' && c <= 'f')
+				digit = c - 'a' + 10;
+			else
+				continue;
+
+			ret <<= 4;
+			ret.data.front() |= digit;
+		}
+		return ret;
+	}
 	void all_bits_on();
 	const BigNum &operator=(const BigNum &other);
 	const BigNum &operator=(const BigNum &&other);
@@ -155,6 +177,40 @@ public:
 	}
 	const BigNum &operator%=(const BigNum &other){
 		*this = *this % other;
+		return *this;
+	}
+	BigNum operator++(int){
+		auto ret = *this;
+		++*this;
+		return ret;
+	}
+	BigNum &operator++(){
+		bool overflow = false;
+		for (auto &i : this->data){
+			overflow = false;
+			if (++i)
+				break;
+			overflow = true;
+		}
+		if (overflow)
+			this->data.push_back(1);
+		return *this;
+	}
+	BigNum operator--(int){
+		auto ret = *this;
+		--*this;
+		return ret;
+	}
+	BigNum &operator--(){
+		bool overflow = false;
+		for (auto &i : this->data){
+			overflow = false;
+			if (i--)
+				break;
+			overflow = true;
+		}
+		this->reduce();
+		this->overflow = overflow;
 		return *this;
 	}
 	bool operator!() const{
@@ -212,7 +268,7 @@ public:
 	}
 
 	BigNum gcd(BigNum b) const;
-	std::vector<unsigned char> to_buffer() const;
+	std::vector<std::uint8_t> to_buffer() const;
 	size_t all_bits() const{
 		return this->data.size() * this->bits;
 	}
@@ -253,12 +309,18 @@ public:
 	SignedBigNum() : bignum(), sign(false) {}
 	SignedBigNum(int value) : bignum(value), sign(value < 0){}
 	SignedBigNum(const BigNum &b): bignum(b), sign(false){}
-	SignedBigNum(const BigNum &&b): bignum(b), sign(false){}
+	SignedBigNum(BigNum &&b): bignum(std::move(b)), sign(false){}
 	bool positive() const{
 		return !this->sign;
 	}
 	bool negative() const{
 		return this->sign;
+	}
+	bool even() const{
+		return this->bignum.even();
+	}
+	bool odd() const{
+		return this->bignum.odd();
 	}
 	void invert_sign(){
 		this->sign = !this->sign;
@@ -268,8 +330,36 @@ public:
 		ret.invert_sign();
 		return ret;
 	}
-	const BigNum &make_positive() const{
+	const BigNum &abs() const{
 		return this->bignum;
+	}
+	SignedBigNum operator++(int){
+		auto ret = *this;
+		++*this;
+		return ret;
+	}
+	SignedBigNum &operator++(){
+		if (this->sign){
+			--this->bignum;
+			if (!this->bignum)
+				this->sign = false;
+		}else
+			++this->bignum;
+		return *this;
+	}
+	SignedBigNum operator--(int){
+		auto ret = *this;
+		--*this;
+		return ret;
+	}
+	SignedBigNum &operator--(){
+		if (this->sign){
+			++this->bignum;
+			if (!this->bignum)
+				this->sign = false;
+		}else
+			--this->bignum;
+		return *this;
 	}
 	bool operator==(const SignedBigNum &other) const {
 		return this->bignum == other.bignum && this->sign == other.sign;
@@ -324,15 +414,39 @@ public:
 		ret *= other;
 		return ret;
 	}
-	SignedBigNum operator/(const SignedBigNum &other) const {
+	SignedBigNum operator/(const SignedBigNum &other) const{
 		auto ret = *this;
 		ret /= other;
 		return ret;
 	}
-	SignedBigNum operator%(const SignedBigNum &other) const {
+	SignedBigNum operator%(const SignedBigNum &other) const{
 		auto ret = *this;
 		ret %= other;
 		return ret;
+	}
+	SignedBigNum operator>>(const SignedBigNum &other) const{
+		auto ret = *this;
+		ret >>= other;
+		return ret;
+	}
+	SignedBigNum &operator>>=(const SignedBigNum &other){
+		if (other.sign)
+			this->bignum <<= other.bignum.convert_to<uintptr_t>();
+		else
+			this->bignum >>= other.bignum.convert_to<uintptr_t>();
+		return *this;
+	}
+	SignedBigNum operator<<(const SignedBigNum &other) const{
+		auto ret = *this;
+		ret <<= other;
+		return ret;
+	}
+	SignedBigNum &operator<<=(const SignedBigNum &other){
+		if (other.sign)
+			this->bignum >>= other.bignum.convert_to<uintptr_t>();
+		else
+			this->bignum <<= other.bignum.convert_to<uintptr_t>();
+		return *this;
 	}
 	bool operator!() const{
 		return !this->bignum;
@@ -344,8 +458,14 @@ public:
 		ret += this->bignum.to_string();
 		return ret;
 	}
+	SignedBigNum extended_euclidean(const SignedBigNum &) const;
+	BigNum euclidean_modulo(const SignedBigNum &other) const;
+	SignedBigNum pow(const SignedBigNum &exponent) const;
+	BigNum mod_pow(const SignedBigNum &exponent, const SignedBigNum &modulo) const;
 };
 
 std::ostream &operator<<(std::ostream &stream, const SignedBigNum &n);
+
+bool tonelli_shanks(SignedBigNum &first_solution, SignedBigNum &second_solution, const SignedBigNum &a, const SignedBigNum &n);
 
 }

@@ -12,7 +12,6 @@ static bool basic_test_rng(const char *seed, const char *iv, const char *expecte
 	rng.get_bytes(buffer);
 	auto digest = hash::algorithm::SHA256::compute(buffer, sizeof(buffer));
 	auto expected = hash::digest::SHA256(expected_digest);
-	std::cout << digest << std::endl;
 	return digest == expected;
 }
 

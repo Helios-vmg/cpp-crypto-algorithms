@@ -1,3 +1,4 @@
 #pragma once
 
-void test_bignum();
+void test_fixed_bignum();
+void test_arbitrary_bignum();

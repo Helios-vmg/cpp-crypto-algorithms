@@ -824,63 +824,6 @@ SignedBigNum<N, T> extended_euclidean(SignedBigNum<N, T> a, const SignedBigNum<N
 	return x0.euclidean_modulo(b);
 }
 
-template <size_t N, typename T>
-SignedBigNum<N, T> legendre_operation(const SignedBigNum<N, T> &a, const SignedBigNum<N, T> &b){
-	return a.mod_pow((b - 1) >> 1, b);
-}
-
-template <size_t Bits, typename T>
-bool tonelli_shanks(SignedBigNum<Bits, T> &first_solution, SignedBigNum<Bits, T> &second_solution, const SignedBigNum<Bits, T> &a, const SignedBigNum<Bits, T> &n){
-	if (legendre_operation(a, n) != 1)
-		return false;
-
-	typedef SignedBigNum<Bits, T> N;
-
-	auto n1 = n - 1;
-	auto q = n1;
-	N s;
-	while (q.is_even()){
-		q >>= 1;
-		s++;
-	}
-
-	if (s == 1){
-		auto temp = a.mod_pow((n + 1) >> 2, n);
-		first_solution = temp;
-		second_solution = (-temp).euclidean_modulo(n);
-		return true;
-	}
-
-	N z(2);
-	for (auto n2 = n1 >> 1; z.mod_pow(n2, n) != n1;)
-		z++;
-
-	auto c = z.mod_pow(q, n);
-	auto r = a.mod_pow((q + 1) >> 1, n);
-	auto t = a.mod_pow(q, n);
-	auto m = s;
-	const N one(1);
-	while (t % n != 1){
-		N i;
-		auto m2 = m - 1;
-
-		for (auto z2 = t; z2 != one && i < m2; ++i)
-			z2 = z2 * z2 % n;
-
-		auto b = c;
-		for (auto e = m - i - 1; !!e; --e)
-			b = b * b % n;
-
-		r = r * b % n;
-		c = b * b % n;
-		t = t * c % n;
-		m = i;
-	}
-	first_solution = r;
-	second_solution = (n - r) % n;
-	return true;
-}
-
 template <size_t MinimumBits, typename number_t>
 BigNum<MinimumBits, number_t>::BigNum(const char *string): BigNum(){
 	for (; *string; string++){
