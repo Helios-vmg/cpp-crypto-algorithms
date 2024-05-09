@@ -111,6 +111,12 @@
     <ClInclude Include="arbitrary.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="test_sha512.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="sha512.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -177,6 +183,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="elliptic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_sha512.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="sha512.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
