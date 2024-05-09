@@ -47,4 +47,6 @@ void test_sha512(){
 
 	for (auto &vector : test_vectors)
 		test_sha512(vector.input, vector.result);
+
+	std::cout << "SHA-512 implementation passed the test!\n";
 }
