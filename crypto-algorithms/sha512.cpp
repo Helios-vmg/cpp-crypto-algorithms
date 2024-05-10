@@ -1,29 +1,5 @@
 #include "sha512.hpp"
 
-#define Ch(x, y, z) ((x & (y ^ z)) ^ z)
-#define Maj(x, y, z) ((x & (y | z)) | (y & z))
-#define SHR(x, n) (x >> n)
-#define ROTR64(X, B) rotr64((X), (B))
-#define ROTR(x, n) ROTR64(x, n)
-#define S0(x) (ROTR(x, 28) ^ ROTR(x, 34) ^ ROTR(x, 39))
-#define S1(x) (ROTR(x, 14) ^ ROTR(x, 18) ^ ROTR(x, 41))
-#define s0(x) (ROTR(x, 1) ^ ROTR(x, 8) ^ SHR(x, 7))
-#define s1(x) (ROTR(x, 19) ^ ROTR(x, 61) ^ SHR(x, 6))
-
-//#define RND(a, b, c, d, e, f, g, h, k) \
-//    h += S1(e) + Ch(e, f, g) + k;      \
-//    d += h;                            \
-//    h += S0(a) + Maj(a, b, c);
-
-//#define RNDr(S, W, i, ii)                                                   \
-//    RND(S[(64 - i) % 8], S[(65 - i) % 8], S[(66 - i) % 8], S[(67 - i) % 8], \
-//        S[(68 - i) % 8], S[(69 - i) % 8], S[(70 - i) % 8], S[(71 - i) % 8], \
-//        W[i + ii] + Krnd[i + ii])
-
-//#define MSCH(W, ii, i) \
-//    W[i + ii + 16] =   \
-//        s1(W[i + ii + 14]) + W[i + ii + 9] + s0(W[i + ii + 1]) + W[i + ii]
-
 namespace{
 
 const uint64_t Krnd[80] = {
@@ -72,7 +48,7 @@ void store64_be(uint8_t dst[8], uint64_t n){
     }
 }
 
-uint64_t rotr64(const uint64_t x, const int b){
+uint64_t rotate_right(const uint64_t x, const int b){
     return (x >> b) | (x << (64 - b));
 }
 
@@ -81,19 +57,58 @@ void be64dec_vect(uint64_t *dst, const unsigned char *src, size_t len){
         dst[i] = load64_be(src + i * 8);
 }
 
-//#define RND(a, b, c, d, e, f, g, h, k) \
-//    h += S1(e) + Ch(e, f, g) + k;      \
-//    d += h;                            \
-//    h += S0(a) + Maj(a, b, c);
-
-void RND(std::uint64_t a, std::uint64_t b, std::uint64_t c, std::uint64_t &d, std::uint64_t e, std::uint64_t f, std::uint64_t g, std::uint64_t &h, std::uint64_t k){
-    h += S1(e) + Ch(e, f, g) + k;
-	d += h;
-	h += S0(a) + Maj(a, b, c);
+std::uint64_t s0(std::uint64_t x){
+    return rotate_right(x, 1) ^ rotate_right(x, 8) ^ (x >> 7);
 }
 
-void RNDr(std::uint64_t *S, std::uint64_t *W, size_t i, size_t ii) {
-    RND(S[(80 - i) % 8], S[(81 - i) % 8], S[(82 - i) % 8], S[(83 - i) % 8], S[(84 - i) % 8], S[(85 - i) % 8], S[(86 - i) % 8], S[(87 - i) % 8], W[i + ii] + Krnd[i + ii]);
+std::uint64_t s1(std::uint64_t x){
+    return rotate_right(x, 19) ^ rotate_right(x, 61) ^ (x >> 6);
+}
+
+std::uint64_t S0(std::uint64_t x){
+    return rotate_right(x, 28) ^ rotate_right(x, 34) ^ rotate_right(x, 39);
+}
+
+std::uint64_t S1(std::uint64_t x){
+    return rotate_right(x, 14) ^ rotate_right(x, 18) ^ rotate_right(x, 41);
+}
+
+std::uint64_t ch(std::uint64_t x, std::uint64_t y, std::uint64_t z){
+	return (x & y) ^ (~x & z);
+}
+
+std::uint64_t maj(std::uint64_t x, std::uint64_t y, std::uint64_t z){
+	return (x & (y | z)) | (y & z);
+}
+
+void RND(
+		std::uint64_t  a,
+		std::uint64_t  b,
+		std::uint64_t  c,
+		std::uint64_t &d,
+		std::uint64_t  e,
+		std::uint64_t  f,
+		std::uint64_t  g,
+		std::uint64_t &h,
+		std::uint64_t  k
+){
+    h += S1(e) + ch(e, f, g) + k;
+	d += h;
+	h += S0(a) + maj(a, b, c);
+}
+
+void RNDr(std::uint64_t *S, std::uint64_t *W, size_t i, size_t j) {
+    RND(
+        S[(80 - i) % 8],
+        S[(81 - i) % 8],
+        S[(82 - i) % 8],
+        S[(83 - i) % 8],
+        S[(84 - i) % 8],
+        S[(85 - i) % 8],
+        S[(86 - i) % 8],
+        S[(87 - i) % 8],
+        W[i + j] + Krnd[i + j]
+    );
 }
 
 void MSCH(std::uint64_t *W, size_t ii, size_t i) {
@@ -212,13 +227,13 @@ void SHA512::update(const void *buffer, size_t length) noexcept{
     if (!length)
         return;
 
-    uint64_t tmp64[80 + 8];
-    uint64_t bitlen[2];
+    std::uint64_t tmp64[80 + 8];
+    std::uint64_t bitlen[2];
 
     auto r = (unsigned long long) ((this->count[1] >> 3) & 0x7f);
 
-    bitlen[1] = ((uint64_t)length) << 3;
-    bitlen[0] = ((uint64_t)length) >> 61;
+    bitlen[1] = ((std::uint64_t)length) << 3;
+    bitlen[0] = ((std::uint64_t)length) >> 61;
     /* LCOV_EXCL_START */
     if ((this->count[1] += bitlen[1]) < bitlen[1])
         this->count[0]++;
@@ -238,15 +253,14 @@ void SHA512::update(const void *buffer, size_t length) noexcept{
     in += 128 - r;
     length -= 128 - r;
 
-    while (length >= 128) {
+    while (length >= 128){
         SHA512_Transform(this->state, in, &tmp64[0], &tmp64[80]);
         in += 128;
         length -= 128;
     }
     length &= 127;
-    for (size_t i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++)
         this->buf[i] = in[i];
-    }
     memset(tmp64, 0, sizeof(tmp64));
 }
 
