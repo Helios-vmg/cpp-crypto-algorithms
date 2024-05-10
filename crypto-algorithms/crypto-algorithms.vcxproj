@@ -164,6 +164,7 @@
     <ClInclude Include="bignum.hpp" />
     <ClInclude Include="block.hpp" />
     <ClInclude Include="ecdsa.hpp" />
+    <ClInclude Include="ed25519.hpp" />
     <ClInclude Include="elliptic.hpp" />
     <ClInclude Include="fixed.hpp" />
     <ClInclude Include="hash.hpp" />
@@ -202,6 +203,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="ed25519.cpp" />
     <ClCompile Include="elliptic.cpp" />
     <ClCompile Include="hex.cpp" />
     <ClCompile Include="main.cpp" />
