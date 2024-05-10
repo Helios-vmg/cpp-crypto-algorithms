@@ -97,7 +97,7 @@ void RND(
 	h += S0(a) + maj(a, b, c);
 }
 
-void RNDr(std::uint64_t *S, std::uint64_t *W, size_t i, size_t j) {
+void RNDr(std::uint64_t (&S)[8], const std::uint64_t (&W)[80], size_t i, size_t j) {
     RND(
         S[(80 - i) % 8],
         S[(81 - i) % 8],
@@ -111,55 +111,8 @@ void RNDr(std::uint64_t *S, std::uint64_t *W, size_t i, size_t j) {
     );
 }
 
-void MSCH(std::uint64_t *W, size_t ii, size_t i) {
-    W[i + ii + 16] = s1(W[i + ii + 14]) + W[i + ii + 9] + s0(W[i + ii + 1]) + W[i + ii];
-}
-
-void SHA512_Transform(uint64_t *state, const uint8_t block[128], uint64_t W[80], uint64_t S[8]){
-    int i;
-
-    be64dec_vect(W, block, 128);
-    memcpy(S, state, 64);
-    for (i = 0; i < 80; i += 16) {
-        RNDr(S, W, 0, i);
-        RNDr(S, W, 1, i);
-        RNDr(S, W, 2, i);
-        RNDr(S, W, 3, i);
-        RNDr(S, W, 4, i);
-        RNDr(S, W, 5, i);
-        RNDr(S, W, 6, i);
-        RNDr(S, W, 7, i);
-        RNDr(S, W, 8, i);
-        RNDr(S, W, 9, i);
-        RNDr(S, W, 10, i);
-        RNDr(S, W, 11, i);
-        RNDr(S, W, 12, i);
-        RNDr(S, W, 13, i);
-        RNDr(S, W, 14, i);
-        RNDr(S, W, 15, i);
-        if (i == 64) {
-            break;
-        }
-        MSCH(W, 0, i);
-        MSCH(W, 1, i);
-        MSCH(W, 2, i);
-        MSCH(W, 3, i);
-        MSCH(W, 4, i);
-        MSCH(W, 5, i);
-        MSCH(W, 6, i);
-        MSCH(W, 7, i);
-        MSCH(W, 8, i);
-        MSCH(W, 9, i);
-        MSCH(W, 10, i);
-        MSCH(W, 11, i);
-        MSCH(W, 12, i);
-        MSCH(W, 13, i);
-        MSCH(W, 14, i);
-        MSCH(W, 15, i);
-    }
-    for (i = 0; i < 8; i++) {
-        state[i] += S[i];
-    }
+void MSCH(std::uint64_t (&W)[80], size_t i, size_t j) {
+    W[j + i + 16] = s1(W[j + i + 14]) + W[j + i + 9] + s0(W[j + i + 1]) + W[j + i];
 }
 
 const uint8_t PAD[128] = {
@@ -171,9 +124,19 @@ const uint8_t PAD[128] = {
     0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-void be64enc_vect(unsigned char *dst, const uint64_t *src, size_t len){
+void be64enc_vect(unsigned char *dst, const std::uint64_t *src, size_t len){
     for (size_t i = 0; i < len / 8; i++)
         store64_be(dst + i * 8, src[i]);
+}
+
+void transform_part_a(size_t i, std::uint64_t (&W)[80], std::uint64_t (&S)[8]){
+	for (size_t j = 0; j < 16; j++)
+		RNDr(S, W, j, i);
+}
+
+void transform_part_b(size_t i, std::uint64_t (&W)[80]){
+	for (size_t j = 0; j < 16; j++)
+		MSCH(W, j, i);
 }
 
 }
@@ -218,80 +181,79 @@ void SHA512::reset() noexcept {
     this->state[i++] = 0x9b05688c2b3e6c1fULL;
     this->state[i++] = 0x1f83d9abfb41bd6bULL;
     this->state[i++] = 0x5be0cd19137e2179ULL;
-    this->count[0] = 0;
-    this->count[1] = 0;
+    this->count = 0;
     memset(this->buf, 0, sizeof(this->buf));
 }
 
-void SHA512::update(const void *buffer, size_t length) noexcept{
+void SHA512::transform(const uint8_t block[128], std::uint64_t (&W)[80], std::uint64_t (&S)[8]) noexcept{
+    be64dec_vect(W, block, 128);
+    memcpy(S, this->state, 64);
+    for (size_t i = 0; i < 64; i += 16){
+        transform_part_a(i, W, S);
+        transform_part_b(i, W);
+    }
+    transform_part_a(64, W, S);
+    for (size_t i = 0; i < 8; i++)
+        this->state[i] += S[i];
+}
+
+void SHA512::update(const void *void_buffer, size_t length) noexcept{
     if (!length)
         return;
 
-    std::uint64_t tmp64[80 + 8];
-    std::uint64_t bitlen[2];
+    std::uint64_t temp_a[80];
+    std::uint64_t temp_b[8];
+    auto r = this->count % 128;
 
-    auto r = (unsigned long long) ((this->count[1] >> 3) & 0x7f);
+    this->count += length;
 
-    bitlen[1] = ((std::uint64_t)length) << 3;
-    bitlen[0] = ((std::uint64_t)length) >> 61;
-    /* LCOV_EXCL_START */
-    if ((this->count[1] += bitlen[1]) < bitlen[1])
-        this->count[0]++;
-    /* LCOV_EXCL_STOP */
-    this->count[0] += bitlen[0];
-
-    auto in = (const std::uint8_t *)buffer;
+    auto buffer = (const std::uint8_t *)void_buffer;
 
     if (length < 128 - r){
-        for (size_t i = 0; i < length; i++)
-            this->buf[r + i] = in[i];
+        memcpy(this->buf + r, buffer, length);
         return;
     }
-    for (size_t i = 0; i < 128 - r; i++)
-        this->buf[r + i] = in[i];
-    SHA512_Transform(this->state, this->buf, &tmp64[0], &tmp64[80]);
-    in += 128 - r;
+    memcpy(this->buf + r, buffer, 128 - r);
+    this->transform(this->buf, temp_a, temp_b);
+    buffer += 128 - r;
     length -= 128 - r;
 
     while (length >= 128){
-        SHA512_Transform(this->state, in, &tmp64[0], &tmp64[80]);
-        in += 128;
+        this->transform(buffer, temp_a, temp_b);
+        buffer += 128;
         length -= 128;
     }
-    length &= 127;
-    for (size_t i = 0; i < length; i++)
-        this->buf[i] = in[i];
-    memset(tmp64, 0, sizeof(tmp64));
+    memcpy(this->buf, buffer, length % 128);
+    memset(temp_a, 0, sizeof(temp_a));
+    memset(temp_b, 0, sizeof(temp_b));
 }
 
 digest::SHA512 SHA512::get_digest() noexcept{
-    uint64_t tmp64[80 + 8];
+    std::uint64_t temp_a[80];
+    std::uint64_t temp_b[8];
 
     digest::SHA512::digest_t ret;
 
     {
-        unsigned int r;
-        unsigned int i;
-
-        r = (unsigned int)((this->count[1] >> 3) & 0x7f);
-        if (r < 112) {
-            for (i = 0; i < 112 - r; i++) {
-                this->buf[r + i] = PAD[i];
-            }
+        auto r = this->count % 128;
+        if (r < 112){
+            memcpy(this->buf + r, PAD, 112 - r);
         }else{
-            for (i = 0; i < 128 - r; i++) {
-                this->buf[r + i] = PAD[i];
-            }
-            SHA512_Transform(this->state, this->buf, tmp64, tmp64 + 80);
+            memcpy(this->buf + r, PAD, 128 - r);
+            this->transform(this->buf, temp_a, temp_b);
             memset(this->buf, 0, 112);
         }
-        be64enc_vect(this->buf + 112, this->count, 16);
-        SHA512_Transform(this->state, this->buf, tmp64, tmp64 + 80);
+        std::uint64_t data[2];
+        data[0] = this->count >> (64 - 3);
+        data[1] = this->count << 3;
+        be64enc_vect(this->buf + 112, data, 16);
+        this->transform(this->buf, temp_a, temp_b);
     }
     be64enc_vect(ret.data(), this->state, 64);
-    memset(tmp64, 0, sizeof(tmp64));
+    memset(temp_a, 0, sizeof(temp_a));
+    memset(temp_b, 0, sizeof(temp_b));
     memset(this->state, 0, sizeof(this->state));
-    memset(this->count, 0, sizeof(this->count));
+    this->count = 0;
     memset(this->buf, 0, sizeof(this->buf));
 
     return ret;

@@ -73,10 +73,10 @@ namespace algorithm {
 
 class SHA512 : public HashAlgorithm {
 	std::uint64_t state[8];
-	std::uint64_t count[2];
+	std::uint64_t count;
 	std::uint8_t buf[128];
 
-	void transform() noexcept;
+	void transform(const std::uint8_t block[128], std::uint64_t (&W)[80], std::uint64_t (&S)[8]) noexcept;
 public:
 	SHA512() {
 		this->SHA512::reset();
@@ -84,7 +84,7 @@ public:
 	SHA512(const SHA512 &) = default;
 	SHA512 &operator=(const SHA512 &) = default;
 	void reset() noexcept override;
-	void update(const void *buffer, size_t length) noexcept override;
+	void update(const void *void_buffer, size_t length) noexcept override;
 	digest::SHA512 get_digest() noexcept;
 	static digest::SHA512 compute(const void *buffer, size_t length) noexcept {
 		SHA512 hash;
