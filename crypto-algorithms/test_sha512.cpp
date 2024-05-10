@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cstring>
 #include <iostream>
+#include <random>
 
 template <typename DigestT>
 std::array<char, DigestT::length * 2 + 1> to_string(const DigestT &digest) {
@@ -23,6 +24,20 @@ void test_sha512(const char *data, const char *sum) {
 		stream << "Failed test: sha512(" << data << ") != " << sum << "\nActual: " << digest;
 		throw std::runtime_error(stream.str());
 	}
+}
+
+std::string generate_data(){
+	std::string ret;
+	ret.reserve(199933);
+	std::mt19937 rng(42);
+	while (ret.size() < ret.capacity()){
+		auto n = rng();
+		for (int i = 0; i < 4 && ret.size() < ret.capacity(); i++){
+			ret.push_back(n & 0xFF);
+			n >>= 8;
+		}
+	}
+	return ret;
 }
 
 void test_sha512(){
@@ -47,6 +62,16 @@ void test_sha512(){
 
 	for (auto &vector : test_vectors)
 		test_sha512(vector.input, vector.result);
+
+	{
+		static const char * const expected = "a47843565d28924baf296db45606820282cf05fde6e0a2b16d9c57d5018af0d2eec8afd71c0b2ab44154256c522dc1f64594a9fd8dbc8ebb9f3b3044e44b06eb";
+		std::string digest = hash::algorithm::SHA512::compute(generate_data());
+		if (digest != expected) {
+			std::stringstream stream;
+			stream << "Failed test: sha512(<generated>) != " << expected << "\nActual: " << digest;
+			throw std::runtime_error(stream.str());
+		}
+	}
 
 	std::cout << "SHA-512 implementation passed the test!\n";
 }
