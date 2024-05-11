@@ -77,7 +77,8 @@ class BlockCipherRng : public Prgn{
 		auto dst = (std::uint8_t *)vdst;
 		while (size){
 			auto block = (*this)();
-			auto n = std::min(size, C::block_size);
+			//To get the indistinguishability property, discard 32 bits per block.
+			auto n = std::min(size, C::block_size - 4);
 			memcpy(dst, block.data(), n);
 			dst += n;
 			size -= n;
