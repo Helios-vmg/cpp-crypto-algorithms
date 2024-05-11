@@ -120,6 +120,9 @@
     <ClInclude Include="ed25519.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="test_ed25519.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -196,6 +199,9 @@
     </ClCompile>
     <ClCompile Include="ed25519.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_ed25519.cpp">
+      <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

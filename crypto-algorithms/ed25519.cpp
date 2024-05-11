@@ -351,9 +351,6 @@ int crypto_sign_verify_detached(const u8 *message, u64 message_length, const u8 
 	u8 t[32];
 	gf p[4], q[4];
 
-	if (message_length < 64)
-		return -1;
-
 	if (unpackneg(q, pk))
 		return -1;
 
@@ -385,6 +382,10 @@ PublicKey::PublicKey(const void *data, size_t size){
 	memcpy(this->data.data(), data, this->size);
 }
 
+bool PublicKey::operator==(const PublicKey &other) const{
+	return !memcmp(this->data.data(), other.data.data(), size);
+}
+
 PrivateKey::PrivateKey(const void *data, size_t size){
 	if (size < this->size)
 		throw std::runtime_error("invalid private key");
@@ -414,6 +415,10 @@ PrivateKey PrivateKey::generate(csprng::Prgn &rng){
 
 PublicKey PrivateKey::get_public_key() const{
 	return { this->data.data() + (size - PublicKey::size), PublicKey::size };
+}
+
+bool PrivateKey::operator==(const PrivateKey &other) const{
+	return !memcmp(this->data.data(), other.data.data(), size);
 }
 
 Signature PrivateKey::sign(const void *message, size_t size) const{

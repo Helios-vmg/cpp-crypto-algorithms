@@ -182,6 +182,7 @@
     <ClInclude Include="test_base64.hpp" />
     <ClInclude Include="test_bignum.hpp" />
     <ClInclude Include="test_block.hpp" />
+    <ClInclude Include="test_ed25519.hpp" />
     <ClInclude Include="test_md5.hpp" />
     <ClInclude Include="test_rng.hpp" />
     <ClInclude Include="test_secp256k1.hpp" />
@@ -215,6 +216,7 @@
     <ClCompile Include="test_aes.cpp" />
     <ClCompile Include="test_base64.cpp" />
     <ClCompile Include="test_bignum.cpp" />
+    <ClCompile Include="test_ed25519.cpp" />
     <ClCompile Include="test_md5.cpp" />
     <ClCompile Include="test_rng.cpp" />
     <ClCompile Include="test_secp256k1.cpp" />

@@ -9,6 +9,7 @@
 #include "test_rng.hpp"
 #include "test_base64.hpp"
 #include "test_shamir.hpp"
+#include "test_ed25519.hpp"
 #include <iostream>
 #include <exception>
 
@@ -24,6 +25,7 @@ int main(){
 		test_stream();
 		test_rng();
 		test_secp256k1();
+		test_ed25519();
 		test_base64();
 		test_shamir();
 	}catch (std::exception &e){

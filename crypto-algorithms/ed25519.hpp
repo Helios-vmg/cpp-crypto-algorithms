@@ -16,6 +16,10 @@ public:
 	auto get_data() const{
 		return this->data;
 	}
+	bool operator==(const PublicKey &other) const;
+	bool operator!=(const PublicKey &other) const{
+		return !(*this == other);
+	}
 };
 
 class Signature;
@@ -36,6 +40,10 @@ public:
 	}
 	Signature sign(const void *message, size_t size) const;
 	PublicKey get_public_key() const;
+	bool operator==(const PrivateKey &other) const;
+	bool operator!=(const PrivateKey &other) const{
+		return !(*this == other);
+	}
 };
 
 class Signature{
