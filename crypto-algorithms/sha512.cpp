@@ -57,20 +57,28 @@ void be64dec_vect(uint64_t *dst, const unsigned char *src, size_t len){
         dst[i] = load64_be(src + i * 8);
 }
 
+std::uint64_t xor_rotate_shift(std::uint64_t x, int a, int b, int c){
+    return rotate_right(x, a) ^ rotate_right(x, b) ^ (x >> c);
+}
+
+std::uint64_t xor_rotate(std::uint64_t x, int a, int b, int c){
+    return rotate_right(x, a) ^ rotate_right(x, b) ^ rotate_right(x, c);
+}
+
 std::uint64_t s0(std::uint64_t x){
-    return rotate_right(x, 1) ^ rotate_right(x, 8) ^ (x >> 7);
+    return xor_rotate_shift(x, 1, 8, 7);
 }
 
 std::uint64_t s1(std::uint64_t x){
-    return rotate_right(x, 19) ^ rotate_right(x, 61) ^ (x >> 6);
+    return xor_rotate_shift(x, 19, 61, 6);
 }
 
 std::uint64_t S0(std::uint64_t x){
-    return rotate_right(x, 28) ^ rotate_right(x, 34) ^ rotate_right(x, 39);
+    return xor_rotate(x, 28, 34, 39);
 }
 
 std::uint64_t S1(std::uint64_t x){
-    return rotate_right(x, 14) ^ rotate_right(x, 18) ^ rotate_right(x, 41);
+    return xor_rotate(x, 14, 18, 41);
 }
 
 std::uint64_t ch(std::uint64_t x, std::uint64_t y, std::uint64_t z){
@@ -187,7 +195,7 @@ void SHA512::reset() noexcept {
 
 void SHA512::transform(const uint8_t block[128], std::uint64_t (&W)[80], std::uint64_t (&S)[8]) noexcept{
     be64dec_vect(W, block, 128);
-    memcpy(S, this->state, 64);
+    memcpy(S, this->state, 8 * sizeof(std::uint64_t));
     for (size_t i = 0; i < 64; i += 16){
         transform_part_a(i, W, S);
         transform_part_b(i, W);
