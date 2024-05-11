@@ -203,5 +203,8 @@
     <ClCompile Include="test_ed25519.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="test_shamir.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

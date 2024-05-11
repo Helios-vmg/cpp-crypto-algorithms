@@ -222,6 +222,7 @@
     <ClCompile Include="test_secp256k1.cpp" />
     <ClCompile Include="test_sha256.cpp" />
     <ClCompile Include="test_sha512.cpp" />
+    <ClCompile Include="test_shamir.cpp" />
     <ClCompile Include="test_stream.cpp" />
     <ClCompile Include="test_twofish.cpp" />
     <ClCompile Include="test_utility.cpp" />
