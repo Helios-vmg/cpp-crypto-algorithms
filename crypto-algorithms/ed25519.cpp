@@ -52,7 +52,7 @@ void car25519(gf o){
 	FOR(i, 16){
 		o[i] += (1LL << 16);
 		c = o[i] >> 16;
-		o[(i + 1) * (i < 15)] += c - 1 + 37 * (c - 1) * (i == 15);
+		o[(i + 1) % 16] += (c - 1) * (i == 15 ? 38 : 1);
 		o[i] -= c << 16;
 	}
 }
@@ -206,12 +206,11 @@ void pack(u8 *r, gf p[4]){
 }
 
 void scalarmult(gf p[4], gf q[4], const u8 *s){
-	int i;
 	set25519(p[0], gf0);
 	set25519(p[1], gf1);
 	set25519(p[2], gf1);
 	set25519(p[3], gf0);
-	for (i = 255; i >= 0; --i){
+	for (int i = 255; i >= 0; --i){
 		u8 b = (s[i / 8] >> (i & 7)) & 1;
 		cswap(p, q, b);
 		add(q, p);
@@ -348,9 +347,7 @@ int unpackneg(gf r[4], const u8 p[32]){
 }
 
 int crypto_sign_verify_detached(const u8 *message, u64 message_length, const u8 *signature, const u8 *pk){
-	u8 t[32];
-	gf p[4], q[4];
-
+	gf q[4];
 	if (unpackneg(q, pk))
 		return -1;
 
@@ -362,10 +359,12 @@ int crypto_sign_verify_detached(const u8 *message, u64 message_length, const u8 
 	auto h = hash.get_digest().to_array();
 
 	reduce(h.data());
+	gf p[4];
 	scalarmult(p, q, h.data());
 
 	scalarbase(q, signature + 32);
 	add(p, q);
+	u8 t[32];
 	pack(t, p);
 
 	if (crypto_verify_32(signature, t))

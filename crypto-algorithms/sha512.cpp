@@ -217,14 +217,15 @@ void SHA512::update(const void *void_buffer, size_t length) noexcept{
 
     auto buffer = (const std::uint8_t *)void_buffer;
 
-    if (length < 128 - r){
+    auto delta = 128 - r;
+    if (length < delta){
         memcpy(this->buf + r, buffer, length);
         return;
     }
-    memcpy(this->buf + r, buffer, 128 - r);
+    memcpy(this->buf + r, buffer, delta);
     this->transform(this->buf, temp_a, temp_b);
-    buffer += 128 - r;
-    length -= 128 - r;
+    buffer += delta;
+    length -= delta;
 
     while (length >= 128){
         this->transform(buffer, temp_a, temp_b);
