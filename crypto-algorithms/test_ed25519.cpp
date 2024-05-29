@@ -1,5 +1,7 @@
 #include "ed25519.hpp"
 #include "hex.hpp"
+#include "rng.hpp"
+#include "aes.hpp"
 #include <iostream>
 
 struct test_case{
@@ -72,7 +74,7 @@ static const test_case test_cases[] = {
 	},
 };
 
-void test_ed25519(){
+static void main_test(){
 	using namespace asymmetric::Ed25519;
 	for (auto [input_string, pubk_string, privk_string, sig_string] : test_cases){
 		auto public_key_data = utility::hex_string_to_buffer<PublicKey::size>(pubk_string);
@@ -105,6 +107,67 @@ void test_ed25519(){
 		if (signature.verify(temp.data(), temp.size(), public_key))
 			throw std::runtime_error("Ed25519 failed signature verification (3)");
 	}
+}
 
+typedef symmetric::Aes<256> Block;
+typedef csprng::BlockCipherRng<Block> Rng;
+static const auto seed = Block::key_t("4974446f6e27744d61747465724e6f6e2761546869734d617474657320202020");
+static const auto iv = Block::block_from_string("6e6f6e27612074686973206d61747465");
+static const size_t data_size = 4096;
+
+static auto init_rng(){
+	return Rng(seed, iv);
+}
+
+using namespace asymmetric::Ed25519;
+
+static std::pair<Signature, PublicKey> get_data(){
+	auto rng = init_rng();
+	auto data = rng.get_bytes(data_size);
+	auto private_key = PrivateKey::generate(rng);
+	auto signature = private_key.sign(data.data(), data.size());
+	auto public_key = private_key.get_public_key();
+
+	if (!signature.verify(data.data(), data.size(), public_key))
+		throw std::runtime_error("assumption violated");
+
+	return { signature, public_key };
+}
+
+static void test_progressive(){
+	auto [signature, public_key] = get_data();
+	const size_t buffer_size = 32;
+	std::uint8_t buffer[buffer_size];
+	static_assert(data_size % buffer_size == 0);
+
+	ProgressiveVerifier verifier(signature, public_key);
+	{
+		auto rng = init_rng();
+		for (size_t i = 0; i < data_size; i += buffer_size){
+			rng.get_bytes(buffer);
+			verifier.update(buffer, buffer_size);
+		}
+		if (!verifier.finish())
+			throw std::runtime_error("Ed25519 (progressive) failed signature verification (1)");
+	}
+	{
+		auto rng = init_rng();
+		for (size_t i = 0; i < data_size; i += buffer_size){
+			rng.get_bytes(buffer);
+			static_assert(data_size / buffer_size > 4);
+			if (i / buffer_size == 4){
+				static_assert(buffer_size > 10);
+				buffer[10] ^= 1 << 5;
+			}
+			verifier.update(buffer, buffer_size);
+		}
+		if (verifier.finish())
+			throw std::runtime_error("Ed25519 (progressive) failed signature verification (2)");
+	}
+}
+
+void test_ed25519(){
+	main_test();
+	test_progressive();
 	std::cout << "Ed25519 implementation passed the test!\n";
 }

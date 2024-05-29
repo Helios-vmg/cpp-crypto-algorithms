@@ -2,6 +2,7 @@
 #include "sha512.hpp"
 #include <stdexcept>
 #include <string>
+#include <optional>
 
 namespace asymmetric::Ed25519{
 
@@ -10,13 +11,13 @@ namespace tweetnacl{
 //#define FOR(i, n) for (i = 0; i < n;++i)
 #define FOR(i, n) for (decltype(n) i = 0; i < n; ++i)
 
-typedef unsigned char u8;
-typedef unsigned long u32;
-typedef unsigned long long u64;
-typedef long long i64;
+typedef std::uint8_t u8;
+typedef std::uint32_t u32;
+typedef std::uint64_t u64;
+typedef std::int64_t i64;
 typedef i64 gf[16];
 
-thread_local ::csprng::Prgn *rng = nullptr;
+thread_local ::csprng::Prng *rng = nullptr;
 
 void randombytes(u8 *dst, u64 count){
 	rng->get_bytes(dst, count);
@@ -346,18 +347,18 @@ int unpackneg(gf r[4], const u8 p[32]){
 	return 0;
 }
 
-int crypto_sign_verify_detached(const u8 *message, u64 message_length, const u8 *signature, const u8 *pk){
-	gf q[4];
+int unpackneg(std::array<gf, 4> &r, const u8 p[32]){
+	return unpackneg(r.data(), p);
+}
+
+std::optional<std::array<gf, 4>> unpack_public_key(const u8 *pk){
+	std::array<gf, 4> q;
 	if (unpackneg(q, pk))
-		return -1;
+		return {};
+	return q;
+}
 
-	hash::algorithm::SHA512 hash;
-	hash.update(signature, Signature::size - PublicKey::size);
-	hash.update(pk, PublicKey::size);
-	hash.update(message, message_length);
-
-	auto h = hash.get_digest().to_array();
-
+int crypto_sign_verify_detached_final_step(const u8 *signature, const u8 *pk, hash::digest::SHA512::digest_t &h, gf *q){
 	reduce(h.data());
 	gf p[4];
 	scalarmult(p, q, h.data());
@@ -371,6 +372,30 @@ int crypto_sign_verify_detached(const u8 *message, u64 message_length, const u8 
 		return -1;
 
 	return 0;
+}
+
+int crypto_sign_verify_detached_progressive(const u8 *signature, const u8 *pk, hash::digest::SHA512::digest_t &h){
+	auto oq = unpack_public_key(pk);
+	if (!oq)
+		return -1;
+
+	return crypto_sign_verify_detached_final_step(signature, pk, h, oq->data());
+}
+
+int crypto_sign_verify_detached(const u8 *message, u64 message_length, const u8 *signature, const u8 *pk){
+	auto oq = unpack_public_key(pk);
+	if (!oq)
+		return -1;
+	auto q = oq->data();
+
+	hash::algorithm::SHA512 hash;
+	hash.update(signature, Signature::size - PublicKey::size);
+	hash.update(pk, PublicKey::size);
+	hash.update(message, message_length);
+
+	auto h = hash.get_digest().to_array();
+
+	return crypto_sign_verify_detached_final_step(signature, pk, h, q);
 }
 
 }
@@ -391,7 +416,7 @@ PrivateKey::PrivateKey(const void *data, size_t size){
 	memcpy(this->data.data(), data, this->size);
 }
 
-PrivateKey PrivateKey::generate(csprng::Prgn &rng){
+PrivateKey PrivateKey::generate(csprng::Prng &rng){
 	tweetnacl::rng = &rng;
 	PrivateKey ret;
 
@@ -434,6 +459,23 @@ Signature::Signature(const void *data, size_t size){
 
 bool Signature::verify(const void *message, size_t size, const PublicKey &pk) const{
 	return !tweetnacl::crypto_sign_verify_detached((const unsigned char *)message, size, this->data.data(), pk.get_data().data());
+}
+
+ProgressiveVerifier::ProgressiveVerifier(const Signature &signature, const PublicKey &pk)
+	: signature(signature)
+	, pk(pk)
+{
+	this->hash.update(this->signature.get_data().data(), Signature::size - PublicKey::size);
+	this->hash.update(this->pk.get_data().data(), PublicKey::size);
+}
+
+void ProgressiveVerifier::update(const void *data, size_t size){
+	this->hash.update(data, size);
+}
+
+bool ProgressiveVerifier::finish(){
+	auto h = this->hash.get_digest().to_array();
+	return !tweetnacl::crypto_sign_verify_detached_progressive(this->signature.get_data().data(), pk.get_data().data(), h);
 }
 
 }

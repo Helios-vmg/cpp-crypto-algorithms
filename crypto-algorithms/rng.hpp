@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ringbuffer.hpp"
 #include <cstdint>
 #include <algorithm>
 #include <vector>
@@ -10,14 +11,10 @@
 
 namespace csprng{
 
-class Prgn{
-protected:
-	virtual void internal_get_bytes(void *dst, size_t size) = 0;
+class Prng{
 public:
-	virtual ~Prgn(){}
-	void get_bytes(void *dst, size_t size){
-		this->internal_get_bytes(dst, size);
-	}
+	virtual ~Prng(){}
+	virtual void get_bytes(void *void_dst, size_t size) = 0;
 	template <typename T, size_t N>
 	void get_bytes(T (&dst)[N]){
 		this->get_bytes(&dst, sizeof(dst));
@@ -39,6 +36,10 @@ public:
 			dst |= temp[i];
 		}
 	}
+	template <size_t N>
+	void get_bytes(std::uint8_t (&dst)[N]){
+		this->get_bytes(dst, N);
+	}
 	template <typename T>
 	typename std::enable_if<std::is_integral<T>::value, T>::type
 	get(){
@@ -48,8 +49,38 @@ public:
 	}
 };
 
+template <size_t N>
+class BlockPrgn : public Prng{
+	std::uint8_t buffer[N];
+	size_t offset = 0;
+	size_t size = 0;
+	void fill_buffer(){
+		this->internal_get_bytes(this->buffer);
+		this->offset = 0;
+		this->size = N;
+	}
+protected:
+	virtual void internal_get_bytes(void *dst) = 0;
+public:
+	virtual ~BlockPrgn(){}
+	void get_bytes(void *void_dst, size_t size) override{
+		auto dst = (std::uint8_t *)void_dst;
+		while (size){
+			if (!this->size)
+				this->fill_buffer();
+			auto write_size = std::min(size, this->size);
+			memcpy(dst, this->buffer + this->offset, write_size);
+			this->offset += write_size;
+			this->size -= write_size;
+			dst += write_size;
+			size -= write_size;
+		}
+	}
+	using csprng::Prng::get_bytes;
+};
+
 template <typename C>
-class BlockCipherRng : public Prgn{
+class BlockCipherRng : public BlockPrgn<C::block_size - 4>{
 	typedef uintptr_t T;
 	static const size_t state_size = (C::block_size + sizeof(T) - 1) / sizeof(T);
 	
@@ -73,16 +104,10 @@ class BlockCipherRng : public Prgn{
 		}
 		return ret;
 	}
-	void internal_get_bytes(void *vdst, size_t size) override{
-		auto dst = (std::uint8_t *)vdst;
-		while (size){
-			auto block = (*this)();
-			//To get the indistinguishability property, discard 32 bits per block.
-			auto n = std::min(size, C::block_size - 4);
-			memcpy(dst, block.data(), n);
-			dst += n;
-			size -= n;
-		}
+	void internal_get_bytes(void *dst) override{
+		auto block = (*this)();
+		//To get the indistinguishability property, discard 32 bits per block.
+		memcpy(dst, block.data(), C::block_size - 4);
 	}
 public:
 	BlockCipherRng(): c(typename C::key_t(random_array<C::key_t::size>())){
