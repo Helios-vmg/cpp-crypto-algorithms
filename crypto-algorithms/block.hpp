@@ -35,10 +35,10 @@ public:
 	}
 };
 
-template <size_t TBlockSize>
+template <size_t BlockSize>
 class BlockCipher{
 public:
-	static inline const size_t block_size = TBlockSize;
+	static inline const size_t block_size = BlockSize;
 	typedef std::array<std::uint8_t, block_size> block_t;
 
 	virtual ~BlockCipher(){}
@@ -70,6 +70,23 @@ public:
 			b = utility::hex2val(*(s++)) << 4;
 			b |= utility::hex2val(*(s++));
 		}
+		return ret;
+	}
+	static void array_xor(void *void_dst, const void *void_left, const void *void_right, size_t size){
+		auto dst = (std::uint8_t *)void_dst;
+		auto left = (std::uint8_t *)void_left;
+		auto right = (std::uint8_t *)void_right;
+		for (size_t i = 0; i < size; i++)
+			dst[i] = left[i] ^ right[i];
+	}
+	static block_t block_xor(const void *left, const block_t &right){
+		block_t ret;
+		array_xor(ret.data(), left, right.data(), BlockSize);
+		return ret;
+	}
+	static block_t block_xor(const block_t &left, const block_t &right){
+		block_t ret;
+		array_xor(ret.data(), left.data(), right.data(), BlockSize);
 		return ret;
 	}
 };

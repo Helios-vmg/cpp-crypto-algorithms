@@ -6,6 +6,7 @@
 #include "test_secp256k1.hpp"
 #include "test_bignum.hpp"
 #include "test_stream.hpp"
+#include "test_cbc.hpp"
 #include "test_rng.hpp"
 #include "test_base64.hpp"
 #include "test_shamir.hpp"
@@ -23,6 +24,7 @@ int main(){
 		test_aes();
 		test_twofish();
 		test_stream();
+		test_cbc();
 		test_rng();
 		test_secp256k1();
 		test_ed25519();

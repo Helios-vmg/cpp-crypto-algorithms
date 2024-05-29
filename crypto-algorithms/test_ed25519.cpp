@@ -2,6 +2,7 @@
 #include "hex.hpp"
 #include "rng.hpp"
 #include "aes.hpp"
+#include "testutils.hpp"
 #include <iostream>
 
 struct test_case{
@@ -109,20 +110,12 @@ static void main_test(){
 	}
 }
 
-typedef symmetric::Aes<256> Block;
-typedef csprng::BlockCipherRng<Block> Rng;
-static const auto seed = Block::key_t("4974446f6e27744d61747465724e6f6e2761546869734d617474657320202020");
-static const auto iv = Block::block_from_string("6e6f6e27612074686973206d61747465");
 static const size_t data_size = 4096;
-
-static auto init_rng(){
-	return Rng(seed, iv);
-}
 
 using namespace asymmetric::Ed25519;
 
 static std::pair<Signature, PublicKey> get_data(){
-	auto rng = init_rng();
+	auto rng = testutils::init_rng();
 	auto data = rng.get_bytes(data_size);
 	auto private_key = PrivateKey::generate(rng);
 	auto signature = private_key.sign(data.data(), data.size());
@@ -142,7 +135,7 @@ static void test_progressive(){
 
 	ProgressiveVerifier verifier(signature, public_key);
 	{
-		auto rng = init_rng();
+		auto rng = testutils::init_rng();
 		for (size_t i = 0; i < data_size; i += buffer_size){
 			rng.get_bytes(buffer);
 			verifier.update(buffer, buffer_size);
@@ -151,7 +144,7 @@ static void test_progressive(){
 			throw std::runtime_error("Ed25519 (progressive) failed signature verification (1)");
 	}
 	{
-		auto rng = init_rng();
+		auto rng = testutils::init_rng();
 		for (size_t i = 0; i < data_size; i += buffer_size){
 			rng.get_bytes(buffer);
 			static_assert(data_size / buffer_size > 4);

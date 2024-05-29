@@ -40,6 +40,12 @@ public:
 	void get_bytes(std::uint8_t (&dst)[N]){
 		this->get_bytes(dst, N);
 	}
+	template <size_t N>
+	std::array<std::uint8_t, N> get_bytes_fixed(){
+		std::array<std::uint8_t, N> ret;
+		this->get_bytes(ret.data(), N);
+		return ret;
+	}
 	template <typename T>
 	typename std::enable_if<std::is_integral<T>::value, T>::type
 	get(){
