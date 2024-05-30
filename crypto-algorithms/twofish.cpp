@@ -1,6 +1,6 @@
 #include "twofish.hpp"
 
-namespace {
+namespace{
 /*
  * Reed-Solomon code parameters: (12,8) reversible code
  * g(x) = x^4 + (a + 1/a) * x^3 + a * x^2 + (a + 1/a) x + 1

@@ -181,9 +181,9 @@ void MD5::reset() noexcept{
 
 void MD5::update(const void *void_buffer, size_t length) noexcept{
 	auto buffer = (const std::uint8_t *)void_buffer;
-	for (size_t i = 0; i < length; i++) {
+	for (size_t i = 0; i < length; i++){
 		this->data[this->datalen++] = buffer[i];
-		if (this->datalen == 64) {
+		if (this->datalen == 64){
 			this->transform();
 			this->bitlen += 512;
 			this->datalen = 0;

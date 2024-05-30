@@ -631,7 +631,7 @@ public:
 		return *this;
 	}
 
-	SignedBigNum operator/(const SignedBigNum &other) const {
+	SignedBigNum operator/(const SignedBigNum &other) const{
 		auto ret = *this;
 		ret /= other;
 		return ret;
@@ -645,7 +645,7 @@ public:
 		return *this;
 	}
 
-	SignedBigNum operator%(const SignedBigNum &other) const {
+	SignedBigNum operator%(const SignedBigNum &other) const{
 		auto ret = *this;
 		ret %= other;
 		return ret;

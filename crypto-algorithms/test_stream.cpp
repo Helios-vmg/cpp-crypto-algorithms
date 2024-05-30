@@ -8,7 +8,7 @@
 #include <string>
 #include <stdexcept>
 
-namespace {
+namespace{
 
 #define CTR_CIPHER 1
 #define assert2(x) stream_assert(x, #x)

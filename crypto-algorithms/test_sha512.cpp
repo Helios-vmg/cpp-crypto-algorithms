@@ -6,10 +6,10 @@
 #include <random>
 
 template <typename DigestT>
-std::array<char, DigestT::length * 2 + 1> to_string(const DigestT &digest) {
+std::array<char, DigestT::length * 2 + 1> to_string(const DigestT &digest){
 	static const char alphabet[] = "0123456789abcdef";
 	std::array<char, DigestT::length * 2 + 1> ret;
-	for (size_t i = 0; i < DigestT::length; i++) {
+	for (size_t i = 0; i < DigestT::length; i++){
 		ret[i * 2 + 0] = alphabet[digest.data[i] >> 4];
 		ret[i * 2 + 1] = alphabet[digest.data[i] & 0x0F];
 	}
@@ -17,9 +17,9 @@ std::array<char, DigestT::length * 2 + 1> to_string(const DigestT &digest) {
 	return ret;
 }
 
-void test_sha512(const char *data, const char *sum) {
+void test_sha512(const char *data, const char *sum){
 	std::string digest = hash::algorithm::SHA512::compute(data, strlen(data));
-	if (digest != sum) {
+	if (digest != sum){
 		std::stringstream stream;
 		stream << "Failed test: sha512(" << data << ") != " << sum << "\nActual: " << digest;
 		throw std::runtime_error(stream.str());
@@ -66,7 +66,7 @@ void test_sha512(){
 	{
 		static const char * const expected = "a47843565d28924baf296db45606820282cf05fde6e0a2b16d9c57d5018af0d2eec8afd71c0b2ab44154256c522dc1f64594a9fd8dbc8ebb9f3b3044e44b06eb";
 		std::string digest = hash::algorithm::SHA512::compute(generate_data());
-		if (digest != expected) {
+		if (digest != expected){
 			std::stringstream stream;
 			stream << "Failed test: sha512(<generated>) != " << expected << "\nActual: " << digest;
 			throw std::runtime_error(stream.str());

@@ -306,7 +306,7 @@ class SignedBigNum{
 	bool sign;
 	SignedBigNum sum(const SignedBigNum &other, bool flip_right_sign) const;
 public:
-	SignedBigNum() : bignum(), sign(false) {}
+	SignedBigNum(): sign(false){}
 	SignedBigNum(int value) : bignum(value), sign(value < 0){}
 	SignedBigNum(const BigNum &b): bignum(b), sign(false){}
 	SignedBigNum(BigNum &&b): bignum(std::move(b)), sign(false){}
@@ -361,20 +361,20 @@ public:
 			--this->bignum;
 		return *this;
 	}
-	bool operator==(const SignedBigNum &other) const {
+	bool operator==(const SignedBigNum &other) const{
 		return this->bignum == other.bignum && this->sign == other.sign;
 	}
-	bool operator!=(const SignedBigNum &other) const {
+	bool operator!=(const SignedBigNum &other) const{
 		return !(*this == other);
 	}
 	bool operator<(const SignedBigNum &other) const;
-	bool operator>(const SignedBigNum &other) const {
+	bool operator>(const SignedBigNum &other) const{
 		return other < *this;
 	}
-	bool operator<=(const SignedBigNum &other) const {
+	bool operator<=(const SignedBigNum &other) const{
 		return !(*this > other);
 	}
-	bool operator>=(const SignedBigNum &other) const {
+	bool operator>=(const SignedBigNum &other) const{
 		return !(*this < other);
 	}
 	SignedBigNum operator+(const SignedBigNum &other) const;

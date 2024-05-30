@@ -90,10 +90,10 @@ void SHA256::reset() noexcept{
 
 void SHA256::update(const void *void_buffer, size_t length) noexcept{
 	auto buffer = (const std::uint8_t *)void_buffer;
-	for (size_t i = 0; i < length; ++i) {
+	for (size_t i = 0; i < length; ++i){
 		this->data[this->datalen] = buffer[i];
 		this->datalen++;
-		if (this->datalen == 64) {
+		if (this->datalen == 64){
 			this->transform();
 			this->bitlen += 512;
 			this->datalen = 0;
@@ -133,7 +133,7 @@ digest::SHA256 SHA256::get_digest() noexcept{
 
 	// Since this implementation uses little endian byte ordering and SHA uses big endian,
 	// reverse all the bytes when copying the final state to the output hash.
-	for (i = 0; i < 4; ++i) {
+	for (i = 0; i < 4; ++i){
 		ret[i +  0] = (this->state[0] >> (24 - i * 8)) & 0xFF;
 		ret[i +  4] = (this->state[1] >> (24 - i * 8)) & 0xFF;
 		ret[i +  8] = (this->state[2] >> (24 - i * 8)) & 0xFF;
@@ -167,7 +167,7 @@ void SHA256::transform() noexcept{
 	auto g = this->state[6];
 	auto h = this->state[7];
 
-	for (int i = 0; i < 64; ++i) {
+	for (int i = 0; i < 64; ++i){
 		t1 = h + ep1(e) + ch(e, f, g) + k[i] + m[i];
 		t2 = ep0(a) + maj(a, b, c);
 		h = g;

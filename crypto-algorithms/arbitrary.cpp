@@ -579,7 +579,7 @@ SignedBigNum SignedBigNum::sum(const SignedBigNum &other, bool flip_right_sign) 
 			ret.bignum = this->bignum + other.bignum;
 			ret.sign = true;
 		}else{
-			if (other.bignum >= this->bignum) {
+			if (other.bignum >= this->bignum){
 				ret.bignum = other.bignum - this->bignum;
 				ret.sign = true;
 			}else{
