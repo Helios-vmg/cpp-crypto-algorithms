@@ -5,27 +5,6 @@
 
 namespace symmetric{
 
-namespace detail{
-
-template <size_t BlockSize>
-void encrypt_cbc_block(void *ciphertext, const BlockCipher<BlockSize> &cipher, typename BlockCipher<BlockSize>::block_t &iv, const void *plaintext){
-	auto encrypted = cipher.encrypt_block(cipher.block_xor(plaintext, iv));
-	memcpy(ciphertext, encrypted.data(), encrypted.size());
-	iv = encrypted;
-}
-
-template <size_t BlockSize>
-void decrypt_cbc_block(void *plaintext, const BlockCipher<BlockSize> &cipher, typename BlockCipher<BlockSize>::block_t &iv, const void *ciphertext){
-	using BlockCipher<BlockSize>::block_t;
-	cipher.decrypt_block(plaintext, ciphertext);
-	block_t next_iv;
-	memcpy(next_iv.data(), plaintext, BlockSize);
-	cipher.array_xor(plaintext, plaintext, iv.data(), BlockSize);
-	iv = next_iv;
-}
-
-}
-
 template <typename Cipher>
 class CbcEncryptor{
 	typedef typename Cipher::block_t block_t;
