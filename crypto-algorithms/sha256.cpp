@@ -1,14 +1,7 @@
 #include "sha256.hpp"
 #include "hex.hpp"
+#include "bit.hpp"
 #include <cstring>
-
-static std::uint32_t rotate_left(std::uint32_t a, std::uint32_t b){
-	return (a << b) | (a >> (32 - b));
-}
-
-static std::uint32_t rotate_right(std::uint32_t a, std::uint32_t b){
-	return (a >> b) | (a << (32 - b));
-}
 
 static std::uint32_t sig0(std::uint32_t x){
 	return rotate_right(x, 7) ^ rotate_right(x, 18) ^ (x >> 3);

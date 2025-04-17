@@ -132,6 +132,15 @@
     <ClInclude Include="test_cbc.hpp">
       <Filter>tests</Filter>
     </ClInclude>
+    <ClInclude Include="sha1.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bit.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test_sha1.hpp">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -219,6 +228,12 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="testutils.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="sha1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_sha1.cpp">
       <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>

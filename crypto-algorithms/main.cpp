@@ -1,4 +1,5 @@
 #include "test_md5.hpp"
+#include "test_sha1.hpp"
 #include "test_sha256.hpp"
 #include "test_sha512.hpp"
 #include "test_aes.hpp"
@@ -19,6 +20,7 @@ int main(){
 		test_fixed_bignum();
 		test_arbitrary_bignum();
 		test_md5();
+		test_sha1();
 		test_sha256();
 		test_sha512();
 		test_aes();
